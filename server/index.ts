@@ -1063,3 +1063,19 @@ if (!hasSeedData()) {
 app.listen(config.port, () => {
   console.log(`ARIPAN API listening on http://localhost:${config.port}`)
 })
+
+app.use('/media', express.static(path.join(__dirname, '../data/media')))
+
+if (config.nodeEnv === 'production') {
+  const distRoot = path.resolve(__dirname, '../dist')
+
+  app.use('/admin', express.static(adminRoot))
+  app.use(express.static(distRoot))
+
+  app.get(/^\/(?!api|media|admin).*/, (_req, res) => {
+    res.sendFile(path.join(distRoot, 'index.html'))
+  })
+} else {
+  app.use('/admin', express.static(adminRoot))
+  app.use(express.static(publicRoot))
+}
