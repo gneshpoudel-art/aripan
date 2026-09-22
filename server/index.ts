@@ -1050,58 +1050,25 @@ app.get('/api/content/blocks/:key', async (req, res) => {
   return res.json(block ?? { key: req.params.key, data: {} })
 })
 
-app.use('/media', express.static(path.join(__dirname, '../data/media')))
+// Static media assets and admin panel
+const mediaDir = path.resolve(__dirname, '../data/media')
+fs.mkdirSync(mediaDir, { recursive: true })
+app.use('/media', express.static(mediaDir))
 app.use('/admin', express.static(adminRoot))
-app.use(express.static(publicRoot))
 
-ensureSchema()
-ensureAdminUser()
-if (!hasSeedData()) {
-  seedDatabase()
-}
+// Frontend SPA serving: if dist/ exists (built with vite), serve it; otherwise serve public/
+const distRoot = path.resolve(__dirname, '../dist')
+const distIndex = path.join(distRoot, 'index.html')
 
-app.listen(config.port, () => {
-  console.log(`ARIPAN API listening on http://localhost:${config.port}`)
-})
-
-app.use('/media', express.static(path.join(__dirname, '../data/media')))
-
-if (config.nodeEnv === 'production') {
-  const distRoot = path.resolve(__dirname, '../dist')
-
-  app.use('/admin', express.static(adminRoot))
+if (fs.existsSync(distIndex)) {
   app.use(express.static(distRoot))
-
-  app.get(/^\/(?!api|media|admin).*/, (_req, res) => {
-    res.sendFile(path.join(distRoot, 'index.html'))
+  app.get('{*path}', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/media') || req.path.startsWith('/admin')) {
+      return next()
+    }
+    res.sendFile(distIndex)
   })
 } else {
-  app.use('/admin', express.static(adminRoot))
-  app.use(express.static(publicRoot))
-}
-
-
-
-
-
-
-
-
-
-
-app.use('/media', express.static(path.join(__dirname, '../data/media')))
-
-if (config.nodeEnv === 'production') {
-  const distRoot = path.resolve(__dirname, '../dist')
-
-  app.use('/admin', express.static(adminRoot))
-  app.use(express.static(distRoot))
-
-  app.get(/^\/(?!api|media|admin).*/, (_req, res) => {
-    res.sendFile(path.join(distRoot, 'index.html'))
-  })
-} else {
-  app.use('/admin', express.static(adminRoot))
   app.use(express.static(publicRoot))
 }
 
@@ -1111,6 +1078,6 @@ if (!hasSeedData()) {
   seedDatabase()
 }
 
-app.listen(config.port, () => {
-  console.log(`ARIPAN API listening on http://localhost:${config.port}`)
+app.listen(config.port, '0.0.0.0', () => {
+  console.log(`ARIPAN API listening on http://0.0.0.0:${config.port} (env: ${config.nodeEnv})`)
 })

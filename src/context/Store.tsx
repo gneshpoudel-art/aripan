@@ -132,7 +132,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       cartCount: cart.reduce((n, l) => n + l.qty, 0),
       wishlistCount: wishlist.length,
     }),
-    [theme, cart, wishlist, isAuthenticated, signInWithGoogle],
+    [theme, cart, wishlist, isAuthenticated, signInWithGoogle, showToast],
   )
 
   return (
