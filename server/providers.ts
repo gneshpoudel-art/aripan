@@ -13,9 +13,9 @@ export type ProviderStatus = {
   googleStatus: 'ok' | 'pending' | 'error'
 }
 
-export function buildGoogleOAuthUrl(state?: string) {
+export function buildGoogleOAuthUrl(state?: string, redirectUriOverride?: string) {
   const clientId = process.env.GOOGLE_CLIENT_ID ?? ''
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI ?? 'http://localhost:5173/auth/google/callback'
+  const redirectUri = redirectUriOverride ?? process.env.GOOGLE_REDIRECT_URI ?? 'http://localhost:5173/auth/google/callback'
   const base = 'https://accounts.google.com/o/oauth2/v2/auth'
   const params = new URLSearchParams({
     client_id: clientId,

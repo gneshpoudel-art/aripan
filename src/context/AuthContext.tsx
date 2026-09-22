@@ -82,7 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = useCallback(async (returnTo = '/') => {
     setIsLoading(true)
     try {
-      const res = await fetch(`/api/auth/google?state=${encodeURIComponent(returnTo)}`)
+      const redirectUri = `${window.location.origin}/`
+      const res = await fetch(`/api/auth/google?state=${encodeURIComponent(returnTo)}&redirectUri=${encodeURIComponent(redirectUri)}`)
       const data = await res.json() as { url: string; configured: boolean }
       if (data.configured && data.url) {
         window.location.href = data.url

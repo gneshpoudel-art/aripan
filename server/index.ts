@@ -203,9 +203,10 @@ app.post('/api/supabase/sync', async (req, res) => {
   return res.json(result)
 })
 
-app.get('/api/auth/google', (_req, res) => {
-  const state = typeof _req.query.state === 'string' ? _req.query.state : 'aripan-google-auth'
-  const url = buildGoogleOAuthUrl(state)
+app.get('/api/auth/google', (req, res) => {
+  const state = typeof req.query.state === 'string' ? req.query.state : 'aripan-google-auth'
+  const redirectUri = typeof req.query.redirectUri === 'string' ? req.query.redirectUri : undefined
+  const url = buildGoogleOAuthUrl(state, redirectUri)
   return res.json({ url, configured: Boolean(process.env.GOOGLE_CLIENT_ID) })
 })
 
