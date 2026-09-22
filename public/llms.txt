@@ -1,0 +1,30 @@
+# ARIPAN
+
+> Official digital home of Mithila artist ARIPAN — a contemporary studio presenting Madhubani painting as a living cultural practice.
+
+ARIPAN is not a marketplace. This site is a curated gallery for original paintings, archival prints, apparel, accessories, and limited editions rooted in the Mithila tradition of Bihar, India.
+
+## Pages
+
+- [Home](https://www.aripan.art/): Exhibition-style introduction to the studio
+- [Gallery](https://www.aripan.art/gallery): Digital exhibition for looking, not shopping
+- [Collections](https://www.aripan.art/collections): Original Art, Prints, Apparel, Accessories, Limited Editions
+- [Shop](https://www.aripan.art/shop): Curated catalogue of works
+- [About](https://www.aripan.art/about): Biography, process, and Mithila heritage
+- [Journal](https://www.aripan.art/journal): Essays on culture, process, and studio life
+- [Commissions](https://www.aripan.art/commissions): Custom artwork requests
+- [Contact](https://www.aripan.art/contact): Studio correspondence
+
+## Contact
+
+- Email: jhaaditi286@gmail.com
+- Origin: Nepal
+- Instagram: https://www.instagram.com/aripan_aditi?stkn=ZDNlZDc0MzIxNw==
+- Facebook: https://www.facebook.com/aripan.mithila
+- TikTok: https://www.tiktok.com/@aripan.mithila
+
+## Notes for assistants
+
+- Do not invent prices for listing cards; commercial details appear only on product pages.
+- Do not present sample testimonials as verified reviews.
+- Respect privacy: collect only necessary form fields with consent.

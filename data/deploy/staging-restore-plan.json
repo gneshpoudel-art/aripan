@@ -1,0 +1,12 @@
+{
+  "environment": "staging",
+  "steps": [
+    "Confirm database backup integrity and restore point.",
+    "Verify environment variables and secrets for frontend and backend.",
+    "Validate Supabase and storage connectivity.",
+    "Restore app configuration and restart services.",
+    "Run startup validation and health checks.",
+    "Sync content and re-check core customer workflows."
+  ],
+  "createdAt": "2026-09-20T11:59:29.838Z"
+}

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADITY Admin</title>
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&display=swap" rel="stylesheet" />
+  <link href="style.css" rel="stylesheet" />
+</head>
+<body>
+  <header class="admin-header">
+    <span class="admin-logo"><img src="/logo.png" alt="ADITY" style="height:32px;display:block;" /></span>
+    <span class="admin-tagline">Admin Panel</span>
+    <button type="button" id="logoutBtn" class="logout-btn" style="display:none">Logout</button>
+  </header>
+  <div id="adminStatus" class="admin-status" aria-live="polite"></div>
+  <nav class="admin-tabs" id="adminTabs" style="display:none"></nav>
+  <main class="admin-main" id="adminMain"></main>
+  <script src="script.js"></script>
+</body>
+</html>
