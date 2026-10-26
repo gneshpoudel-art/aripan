@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
-import { getArticle } from '@/data/journal'
+import { getArticle as getStaticArticle } from '@/data/journal'
+import { useCatalogUtils } from '@/context/CatalogContext'
 import { formatDate } from '@/lib/format'
 import { Seo } from '@/components/seo/Seo'
 import { breadcrumbSchema } from '@/lib/schema'
@@ -8,8 +9,18 @@ import { NotFoundPage } from './NotFoundPage'
 
 export function ArticlePage() {
   const { slug = '' } = useParams()
-  const article = getArticle(slug)
-  if (!article) return <NotFoundPage />
+  const { getArticle: getDynamicArticle, loading } = useCatalogUtils()
+  const article = getDynamicArticle(slug) || getStaticArticle(slug)
+  if (!article) {
+    if (loading) {
+      return (
+        <div className="wrap page-hero" style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+          <p style={{ color: 'var(--ink-muted, #71717a)', fontStyle: 'italic' }}>Loading article…</p>
+        </div>
+      )
+    }
+    return <NotFoundPage />
+  }
 
   return (
     <article className="wrap page-hero">
@@ -50,9 +61,13 @@ export function ArticlePage() {
       <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.8rem)', maxWidth: '18ch' }}>{article.title}</h1>
       <img src={article.image} alt="" style={{ margin: '2rem 0', maxHeight: '70vh', objectFit: 'cover', width: '100%' }} />
       <div className="prose">
-        {article.body.map((p) => (
-          <p key={p}>{p}</p>
-        ))}
+        {Array.isArray(article.body) ? (
+          article.body.map((p: string, idx: number) => (
+            <p key={idx}>{p}</p>
+          ))
+        ) : (
+          <p>{String(article.body || '')}</p>
+        )}
       </div>
     </article>
   )

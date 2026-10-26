@@ -8,9 +8,18 @@ import { NotFoundPage } from './NotFoundPage'
 
 export function CollectionPage() {
   const { slug = '' } = useParams()
-  const { getCollection, productsByCollection } = useCatalogUtils()
+  const { getCollection, productsByCollection, loading } = useCatalogUtils()
   const collection = getCollection(slug)
-  if (!collection) return <NotFoundPage />
+  if (!collection) {
+    if (loading) {
+      return (
+        <div className="wrap page-hero" style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+          <p style={{ color: 'var(--ink-muted, #71717a)', fontStyle: 'italic' }}>Loading collection…</p>
+        </div>
+      )
+    }
+    return <NotFoundPage />
+  }
   const items = productsByCollection(collection.slug)
 
   return (

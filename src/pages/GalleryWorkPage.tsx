@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 
 export function GalleryWorkPage() {
   const { slug = '' } = useParams()
-  const { getGalleryWork, getProduct } = useCatalogUtils()
+  const { getGalleryWork, getProduct, loading } = useCatalogUtils()
   const work = getGalleryWork(slug)
   const [full, setFull] = useState(false)
   useEffect(() => {
@@ -18,7 +18,16 @@ export function GalleryWorkPage() {
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [full])
-  if (!work) return <NotFoundPage />
+  if (!work) {
+    if (loading) {
+      return (
+        <div className="wrap page-hero" style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+          <p style={{ color: 'var(--ink-muted, #71717a)', fontStyle: 'italic' }}>Loading gallery work…</p>
+        </div>
+      )
+    }
+    return <NotFoundPage />
+  }
   const product = work.productSlug ? getProduct(work.productSlug) : undefined
 
   return (

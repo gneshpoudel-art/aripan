@@ -46,7 +46,11 @@ export type SitePayload = {
 const key = 'aripan-site-data'
 
 export function hydrateSiteData(payload: SitePayload) {
-  if (payload.site) localStorage.setItem(key, JSON.stringify(payload))
+  if (payload && (payload.site || payload.products?.length)) {
+    try {
+      localStorage.setItem(key, JSON.stringify(payload))
+    } catch {}
+  }
 }
 
 export function readSiteData(): SitePayload | null {

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import type { Product, GalleryWork } from '@/data/catalog'
-import { API_BASE } from '@/lib/api'
+import { collections as fallbackCollections, galleryWorks as fallbackGalleryWorks, products as fallbackProducts, type Product, type GalleryWork } from '@/data/catalog'
+import { articles as fallbackArticles } from '@/data/journal'
+import { API_BASE, hydrateSiteData, readSiteData } from '@/lib/api'
 
 type CatalogContextType = {
   products: Product[]
@@ -13,13 +14,18 @@ type CatalogContextType = {
 
 const CatalogContext = createContext<CatalogContextType | null>(null)
 
+function getInitialCatalogData() {
+  const cached = readSiteData()
+  return {
+    products: cached?.products?.length ? (cached.products as Product[]) : fallbackProducts,
+    collections: cached?.collections?.length ? cached.collections : fallbackCollections,
+    galleryWorks: cached?.galleryWorks?.length ? cached.galleryWorks : fallbackGalleryWorks,
+    articles: cached?.articles?.length ? cached.articles : fallbackArticles,
+  }
+}
+
 export function CatalogProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<Omit<CatalogContextType, 'refresh' | 'loading'>>({
-    products: [],
-    collections: [],
-    galleryWorks: [],
-    articles: [],
-  })
+  const [data, setData] = useState<Omit<CatalogContextType, 'refresh' | 'loading'>>(getInitialCatalogData)
   const [loading, setLoading] = useState(true)
 
   const refresh = async () => {
@@ -27,6 +33,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       const res = await fetch(API_BASE + '/api/site')
       if (res.ok) {
         const payload = await res.json()
+        hydrateSiteData(payload)
         setData({
           products: payload.products || [],
           collections: payload.collections || [],
@@ -80,13 +87,16 @@ export function useCatalog() {
 }
 
 export function useCatalogUtils() {
-  const { products, collections, galleryWorks, articles } = useCatalog()
+  const { products, collections, galleryWorks, articles, loading, refresh } = useCatalog()
 
   return {
+    loading,
+    refresh,
     products,
     collections,
     galleryWorks,
     articles,
+    getArticle: (slug: string) => articles.find((a: any) => a.slug === slug),
     newestProducts: (count = 4) => [...products].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)).slice(0, count),
     featuredProducts: () => products.filter((p) => p.featured),
     bestSellers: () => products.filter((p) => p.bestSeller),
