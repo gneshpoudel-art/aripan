@@ -2,8 +2,10 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 
-const MEDIA_ROOT = path.resolve(process.cwd(), 'data', 'media')
-fs.mkdirSync(MEDIA_ROOT, { recursive: true })
+const MEDIA_ROOT = process.env.VERCEL ? '/tmp/media' : path.resolve(process.cwd(), 'data', 'media')
+if (!process.env.VERCEL) {
+  try { fs.mkdirSync(MEDIA_ROOT, { recursive: true }) } catch {}
+}
 
 export function validateMediaUpload(input: {
   originalName: string

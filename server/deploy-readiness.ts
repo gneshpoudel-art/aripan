@@ -1,8 +1,10 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-const DEPLOY_ROOT = path.resolve(process.cwd(), 'data', 'deploy')
-fs.mkdirSync(DEPLOY_ROOT, { recursive: true })
+const DEPLOY_ROOT = process.env.VERCEL ? '/tmp/deploy' : path.resolve(process.cwd(), 'data', 'deploy')
+if (!process.env.VERCEL) {
+  try { fs.mkdirSync(DEPLOY_ROOT, { recursive: true }) } catch {}
+}
 
 export function generateDeploymentChecklist(input: {
   frontendHost: string
