@@ -19,6 +19,18 @@
   <div id="adminStatus" class="admin-status" aria-live="polite"></div>
   <nav class="admin-tabs" id="adminTabs" style="display:none"></nav>
   <main class="admin-main" id="adminMain"></main>
+  <!-- API base URL: empty string = relative (dev/Vite proxy), full URL = production Vercel backend -->
+  <script>
+    // Injected at build time via vite / used at runtime in production
+    window.ARIPAN_API_URL = (function() {
+      // If served from Render (not localhost), point to Vercel backend
+      var host = location.hostname;
+      if (host !== 'localhost' && host !== '127.0.0.1') {
+        return 'https://aripan-two.vercel.app';
+      }
+      return ''; // empty = relative URLs, proxied by Vite in local dev
+    })();
+  </script>
   <script src="script.js"></script>
 </body>
 </html>

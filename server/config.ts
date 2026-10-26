@@ -7,7 +7,7 @@ const defaultOrigins = [
   'http://127.0.0.1:5173',
   'http://localhost:4000',
   'http://127.0.0.1:4000',
-  // Render frontend domains
+  // Render frontend (both spellings to be safe)
   'https://aripan-frontend.onrender.com',
   'https://aripan-frontendd.onrender.com',
   // Vercel preview/production domains

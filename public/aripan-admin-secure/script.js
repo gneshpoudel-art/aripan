@@ -5,6 +5,9 @@
    ================================================================ */
 
 // ── Config ────────────────────────────────────────────────────
+// Base URL of the Node.js API server. Empty string = same origin (local dev via Vite proxy).
+// window.ARIPAN_API_URL is set in index.html before this script loads.
+const API_BASE = (typeof window !== 'undefined' && window.ARIPAN_API_URL) ? window.ARIPAN_API_URL : '';
 const TABS = [
   { key: 'overview',     label: 'Overview' },
   { key: 'homepage',     label: 'Homepage' },
@@ -54,23 +57,18 @@ function notifyMainSite(type = 'catalog', key = null) {
 }
 
 // ── API ───────────────────────────────────────────────────────
-function getApiBase() {
-  const custom = localStorage.getItem('aripan-admin-api-base');
-  if (custom) return custom.replace(/\/$/, '');
-  return '';
-}
-
 async function api(path, opts = {}) {
   const tok = getToken();
   const isFormData = opts.body instanceof FormData;
   const headers = {};
   if (tok) headers['Authorization'] = 'Bearer ' + tok;
   if (!isFormData) headers['Content-Type'] = 'application/json';
-  const base = getApiBase();
-  const targetUrl = path.startsWith('http') ? path : `${base}${path}`;
-  const r = await fetch(targetUrl, { ...opts, headers });
-  const contentType = r.headers.get('content-type') || '';
-  if (contentType.includes('text/html')) {
+  // Prepend API_BASE so that in production calls go to Vercel, not Render
+  const url = API_BASE + path;
+  const r = await fetch(url, { ...opts, headers });
+  const ct = r.headers.get('content-type') || '';
+  if (!ct.includes('application/json')) {
+    // Got HTML instead of JSON — backend URL is wrong
     throw new Error('API server returned HTML instead of JSON. Ensure your Node.js backend is running as a Web Service.');
   }
   const body = await r.json().catch(() => ({}));
@@ -165,7 +163,7 @@ function setupSingleImageUpload({ inputId, fileId, previewContainerId }) {
         const fd = new FormData();
         fd.append('file', file);
         const tok = getToken();
-        const r = await fetch('/api/media/upload', {
+        const r = await fetch(API_BASE + '/api/media/upload', {
           method: 'POST',
           headers: tok ? { 'Authorization': 'Bearer ' + tok } : {},
           body: fd,
