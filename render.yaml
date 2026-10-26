@@ -1,22 +1,29 @@
 services:
-  # ── Full-Stack Web Service on Render (React frontend + Admin panel + Express API) ──
+  # ── Frontend static site on Render ──────────────────────────────────────────
   - type: web
-    name: aripan
-    env: node
-    plan: free
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    name: aripan-frontend
+    env: static
+    buildCommand: npm run build
+    staticPublishPath: ./dist
     envVars:
-      - key: NODE_ENV
-        value: production
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false
-      - key: ADMIN_EMAIL
-        value: admin@aripan.art
-      - key: ADMIN_PASSWORD
-        sync: false
-      - key: JWT_SECRET
-        generateValue: true
-
+      - key: VITE_API_URL
+        sync: false          # Set this to your Vercel backend URL in Render dashboard
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+    routes:
+      # Serve the admin panel's own static files — must come BEFORE the SPA catch-all
+      - type: rewrite
+        source: /aripan-admin-secure
+        destination: /aripan-admin-secure/index.html
+      - type: rewrite
+        source: /aripan-admin-secure/*
+        destination: /aripan-admin-secure/index.html
+      # SPA catch-all — all other paths go to the React app
+      - type: rewrite
+        source: /*
+        destination: /index.html

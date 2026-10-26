@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Product, GalleryWork } from '@/data/catalog'
+import { API_BASE } from '@/lib/api'
 
 type CatalogContextType = {
   products: Product[]
@@ -23,7 +24,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
 
   const refresh = async () => {
     try {
-      const res = await fetch('/api/site')
+      const res = await fetch(API_BASE + '/api/site')
       if (res.ok) {
         const payload = await res.json()
         setData({

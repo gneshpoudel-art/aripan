@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 import { cartProducts } from '@/lib/cart'
 import { formatPrice } from '@/lib/format'
 import { Seo } from '@/components/seo/Seo'
+import { API_BASE } from '@/lib/api'
 
 type GpsState = 'idle' | 'loading' | 'detected' | 'denied' | 'error'
 
@@ -117,7 +118,7 @@ export function CartPage() {
     if (!token) return
     setLoadingOrders(true)
     try {
-      const res = await fetch('/api/orders/me', {
+      const res = await fetch(API_BASE + '/api/orders/me', {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (res.ok) {
@@ -245,7 +246,7 @@ export function CartPage() {
     }
 
     try {
-      const res = await fetch('/api/orders/checkout', {
+      const res = await fetch(API_BASE + '/api/orders/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -339,7 +340,7 @@ export function CartPage() {
         body.location_accuracy = editGpsCoords.accuracy
         body.location_url = editGpsCoords.url
       }
-      const res = await fetch(`/api/orders/${editingOrder.id}`, {
+      const res = await fetch(API_BASE + `/api/orders/${editingOrder.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -368,7 +369,7 @@ export function CartPage() {
     if (!confirmed) return
 
     try {
-      const res = await fetch(`/api/orders/${orderId}/cancel`, {
+      const res = await fetch(API_BASE + `/api/orders/${orderId}/cancel`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

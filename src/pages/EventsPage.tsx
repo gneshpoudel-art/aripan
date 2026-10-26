@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Seo } from '@/components/seo/Seo'
 import { breadcrumbSchema } from '@/lib/schema'
+import { API_BASE } from '@/lib/api'
 
 type Event = {
   id: string
@@ -41,7 +42,7 @@ export function EventsPage() {
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'ongoing' | 'past'>('all')
 
   useEffect(() => {
-    fetch('/api/events')
+    fetch(API_BASE + '/api/events')
       .then((r) => r.json())
       .then((data: Event[]) => {
         setEvents(Array.isArray(data) ? data : [])

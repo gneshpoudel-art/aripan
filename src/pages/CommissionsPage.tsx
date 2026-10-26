@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react'
 import { Seo } from '@/components/seo/Seo'
 import { breadcrumbSchema } from '@/lib/schema'
 import { SITE } from '@/lib/site'
+import { API_BASE } from '@/lib/api'
 
 export function CommissionsPage() {
   const [done, setDone] = useState(false)
@@ -35,7 +36,7 @@ export function CommissionsPage() {
     setLoading(true)
 
     try {
-      const res = await fetch('/api/commissions', {
+      const res = await fetch(API_BASE + '/api/commissions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, country, budget, description }),

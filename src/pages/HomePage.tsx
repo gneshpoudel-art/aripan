@@ -8,6 +8,7 @@ import { Seo } from '@/components/seo/Seo'
 import { orgSchema, webSiteSchema } from '@/lib/schema'
 import { NewsletterBlock } from '@/components/ui/NewsletterBlock'
 import { SITE } from '@/lib/site'
+import { API_BASE } from '@/lib/api'
 
 // ── Content-block types ────────────────────────────────────
 type HeroBlock = {
@@ -42,7 +43,7 @@ const DEFAULT_STATEMENT: StatementBlock = {
 
 async function fetchBlock<T>(key: string): Promise<T | null> {
   try {
-    const r = await fetch(`/api/content/blocks/${key}`)
+    const r = await fetch(API_BASE + `/api/content/blocks/${key}`)
     if (!r.ok) return null
     const j = await r.json()
     if (!j || typeof j !== 'object') return null

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { artist as defaultArtist } from '@/data/artist'
 import { Seo } from '@/components/seo/Seo'
 import { breadcrumbSchema } from '@/lib/schema'
+import { API_BASE } from '@/lib/api'
 
 export interface AboutContent {
   eyebrow?: string
@@ -28,7 +29,7 @@ export interface AboutContent {
 
 async function fetchAboutBlock(): Promise<AboutContent | null> {
   try {
-    const r = await fetch('/api/content/blocks/biography')
+    const r = await fetch(API_BASE + '/api/content/blocks/biography')
     if (!r.ok) return null
     const j = await r.json()
     if (!j || typeof j !== 'object') return null

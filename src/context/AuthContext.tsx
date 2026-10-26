@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { API_BASE } from '@/lib/api'
 
 export type CustomerUser = {
   id: string
@@ -50,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void (async () => {
       setIsLoading(true)
       try {
-        const res = await fetch('/api/auth/google/callback', {
+        const res = await fetch(API_BASE + '/api/auth/google/callback', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -83,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true)
     try {
       const redirectUri = `${window.location.origin}/`
-      const res = await fetch(`/api/auth/google?state=${encodeURIComponent(returnTo)}&redirectUri=${encodeURIComponent(redirectUri)}`)
+      const res = await fetch(API_BASE + `/api/auth/google?state=${encodeURIComponent(returnTo)}&redirectUri=${encodeURIComponent(redirectUri)}`)
       const data = await res.json() as { url: string; configured: boolean }
       if (data.configured && data.url) {
         window.location.href = data.url
