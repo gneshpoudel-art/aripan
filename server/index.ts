@@ -32,11 +32,11 @@ import {
 } from './db.js'
 
 // ── Multer: use /tmp in production (Vercel) or data/media locally ──────────────
-const mediaDir = process.env.VERCEL ? '/tmp/uploads' : 'data/media'
+const mediaDir = process.env.VERCEL ? '/tmp' : path.resolve(process.cwd(), 'data', 'media')
 if (!process.env.VERCEL) {
-  try { fs.mkdirSync(path.resolve(process.cwd(), 'data', 'media'), { recursive: true }) } catch {}
+  try { fs.mkdirSync(mediaDir, { recursive: true }) } catch {}
 }
-const upload = multer({ dest: mediaDir })
+const upload = multer({ dest: mediaDir, limits: { fileSize: 50 * 1024 * 1024 } })
 const app = express()
 
 // Only resolve __dirname / publicRoot when NOT on Vercel (no __dirname there)
@@ -832,6 +832,18 @@ if (!process.env.VERCEL) {
     app.use(express.static(publicRoot))
   }
 }
+
+// ── Error handling middleware ────────────────────────────────────────────────
+app.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err) {
+    console.error('[Upload/Server Error]', err)
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ error: `Upload error: ${err.message}` })
+    }
+    return res.status(err.status || 500).json({ error: err.message || 'Internal server error' })
+  }
+  next()
+})
 
 // ── Bootstrap (async) ─────────────────────────────────────────────────────────
 async function bootstrap() {

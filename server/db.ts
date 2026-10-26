@@ -81,7 +81,9 @@ export async function upsertRecord<T extends object>(table: string, id: string, 
 }
 
 export async function deleteRecord(table: string, id: string) {
-  await getDB().from(table).delete().eq('id', id)
+  const sb = getDB()
+  await sb.from(table).delete().eq('id', id)
+  await sb.from(table).delete().eq('slug', id)
 }
 
 // ── Audit log ─────────────────────────────────────────────────────────────────

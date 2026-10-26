@@ -154,22 +154,34 @@ function setupSingleImageUpload({ inputId, fileId, previewContainerId }) {
   input.addEventListener('change', updatePreview);
   updatePreview();
 
+// ── Media Upload Helper ───────────────────────────────────────
+async function uploadMediaFile(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const tok = getToken();
+  const url = API_BASE + '/api/media/upload';
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: tok ? { 'Authorization': 'Bearer ' + tok } : {},
+    body: fd,
+  });
+  let data = {};
+  try {
+    data = await r.json();
+  } catch {
+    throw new Error(`Server returned HTTP ${r.status} (${r.statusText || 'error'}). Non-JSON response received.`);
+  }
+  if (!r.ok) throw new Error(data.error || 'Upload failed (HTTP ' + r.status + ')');
+  return data;
+}
+
   if (fileInput) {
     fileInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
       status('Uploading image from device…');
       try {
-        const fd = new FormData();
-        fd.append('file', file);
-        const tok = getToken();
-        const r = await fetch(API_BASE + '/api/media/upload', {
-          method: 'POST',
-          headers: tok ? { 'Authorization': 'Bearer ' + tok } : {},
-          body: fd,
-        });
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error || 'Upload failed');
+        const data = await uploadMediaFile(file);
         input.value = data.url;
         updatePreview();
         status('Image uploaded from device successfully.');
@@ -560,16 +572,7 @@ function showProductForm(item) {
     if (!file) return;
     status('Uploading image…');
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const tok = getToken();
-      const r = await fetch('/api/media/upload', {
-        method: 'POST',
-        headers: tok ? { 'Authorization': 'Bearer ' + tok } : {},
-        body: fd,
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'Upload failed');
+      const data = await uploadMediaFile(file);
       imgList.push(data.url);
       renderImgList();
       status('Image uploaded.');
@@ -678,6 +681,7 @@ function renderCollectionCards(cols) {
         <div class="card-actions">
           ${c.image ? `<img src="${esc(c.image)}" class="thumb" onerror="this.onerror=null;this.classList.add('is-broken')" />` : ''}
           <button type="button" class="btn-edit" data-idx="${i}">Edit</button>
+          <button type="button" class="btn-del" data-slug="${esc(c.slug)}">Delete</button>
         </div>
       </div>
     </div>
@@ -685,6 +689,20 @@ function renderCollectionCards(cols) {
   list.__cols = cols;
   list.querySelectorAll('.btn-edit').forEach(btn => {
     btn.addEventListener('click', () => showCollectionForm(list.__cols[parseInt(btn.dataset.idx)]));
+  });
+  list.querySelectorAll('.btn-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const slug = btn.dataset.slug;
+      if (!confirm(`Delete collection "${slug}"? This cannot be undone.`)) return;
+      try {
+        await api('/api/admin/collections/' + encodeURIComponent(slug), { method: 'DELETE' });
+        status('Collection deleted.');
+        notifyMainSite('catalog');
+        secCollections();
+      } catch (e) {
+        status('Delete failed: ' + e.message, true);
+      }
+    });
   });
 }
 
@@ -730,6 +748,7 @@ function showCollectionForm(item) {
       </div>
       <div class="form-actions">
         <button type="submit" class="btn-primary">Save collection</button>
+        ${item?.slug ? `<button type="button" class="btn-del" id="delColBtn">Delete collection</button>` : ''}
         <button type="button" class="btn-ghost" id="cancelColBtn2">Cancel</button>
       </div>
     </form>
@@ -740,6 +759,21 @@ function showCollectionForm(item) {
 
   document.getElementById('cancelColBtn').addEventListener('click', () => secCollections());
   document.getElementById('cancelColBtn2').addEventListener('click', () => secCollections());
+
+  if (item?.slug) {
+    document.getElementById('delColBtn')?.addEventListener('click', async () => {
+      if (!confirm(`Delete collection "${item.name || item.slug}"? This cannot be undone.`)) return;
+      try {
+        await api('/api/admin/collections/' + encodeURIComponent(item.slug), { method: 'DELETE' });
+        status('Collection deleted.');
+        notifyMainSite('catalog');
+        secCollections();
+      } catch (e) {
+        status('Delete failed: ' + e.message, true);
+      }
+    });
+  }
+
   document.getElementById('colForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('cName').value.trim();
@@ -785,6 +819,7 @@ async function secGallery() {
         <div class="card-actions">
           ${w.image ? `<img src="${esc(w.image)}" class="thumb" onerror="this.onerror=null;this.classList.add('is-broken')" />` : ''}
           <button type="button" class="btn-edit" data-idx="${i}">Edit</button>
+          <button type="button" class="btn-del" data-id="${esc(w.id)}">Delete</button>
         </div>
       </div>
     </div>
@@ -792,6 +827,20 @@ async function secGallery() {
   list.__works = works;
   list.querySelectorAll('.btn-edit').forEach(btn => {
     btn.addEventListener('click', () => showGalleryForm(list.__works[parseInt(btn.dataset.idx)]));
+  });
+  list.querySelectorAll('.btn-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      if (!confirm('Delete this gallery work? This cannot be undone.')) return;
+      try {
+        await api('/api/admin/gallery/' + encodeURIComponent(id), { method: 'DELETE' });
+        status('Gallery work deleted.');
+        notifyMainSite('catalog');
+        secGallery();
+      } catch (e) {
+        status('Delete failed: ' + e.message, true);
+      }
+    });
   });
 }
 
@@ -830,6 +879,7 @@ function showGalleryForm(item) {
       </div>
       <div class="form-actions">
         <button type="submit" class="btn-primary">Save work</button>
+        ${item?.id ? `<button type="button" class="btn-del" id="delGallBtn">Delete work</button>` : ''}
         <button type="button" class="btn-ghost" id="cancelGallBtn2">Cancel</button>
       </div>
     </form>
@@ -839,6 +889,21 @@ function showGalleryForm(item) {
 
   document.getElementById('cancelGallBtn').addEventListener('click', () => secGallery());
   document.getElementById('cancelGallBtn2').addEventListener('click', () => secGallery());
+
+  if (item?.id) {
+    document.getElementById('delGallBtn')?.addEventListener('click', async () => {
+      if (!confirm(`Delete gallery work "${item.title || item.id}"? This cannot be undone.`)) return;
+      try {
+        await api('/api/admin/gallery/' + encodeURIComponent(item.id), { method: 'DELETE' });
+        status('Gallery work deleted.');
+        notifyMainSite('catalog');
+        secGallery();
+      } catch (e) {
+        status('Delete failed: ' + e.message, true);
+      }
+    });
+  }
+
   document.getElementById('gallForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const title = document.getElementById('gTitle').value.trim();
@@ -883,6 +948,7 @@ async function secArticles() {
         <div class="card-actions">
           ${a.image ? `<img src="${esc(a.image)}" class="thumb" onerror="this.onerror=null;this.classList.add('is-broken')" />` : ''}
           <button type="button" class="btn-edit" data-idx="${i}">Edit</button>
+          <button type="button" class="btn-del" data-slug="${esc(a.slug)}">Delete</button>
         </div>
       </div>
     </div>
@@ -890,6 +956,20 @@ async function secArticles() {
   list.__arts = articles;
   list.querySelectorAll('.btn-edit').forEach(btn => {
     btn.addEventListener('click', () => showArticleForm(list.__arts[parseInt(btn.dataset.idx)]));
+  });
+  list.querySelectorAll('.btn-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const slug = btn.dataset.slug;
+      if (!confirm(`Delete article "${slug}"? This cannot be undone.`)) return;
+      try {
+        await api('/api/admin/articles/' + encodeURIComponent(slug), { method: 'DELETE' });
+        status('Article deleted.');
+        notifyMainSite('catalog');
+        secArticles();
+      } catch (e) {
+        status('Delete failed: ' + e.message, true);
+      }
+    });
   });
 }
 
@@ -922,6 +1002,7 @@ function showArticleForm(item) {
       </div>
       <div class="form-actions">
         <button type="submit" class="btn-primary">Save article</button>
+        ${item?.slug ? `<button type="button" class="btn-del" id="delArtBtn">Delete article</button>` : ''}
         <button type="button" class="btn-ghost" id="cancelArtBtn2">Cancel</button>
       </div>
     </form>
@@ -931,6 +1012,21 @@ function showArticleForm(item) {
 
   document.getElementById('cancelArtBtn').addEventListener('click', () => secArticles());
   document.getElementById('cancelArtBtn2').addEventListener('click', () => secArticles());
+
+  if (item?.slug) {
+    document.getElementById('delArtBtn')?.addEventListener('click', async () => {
+      if (!confirm(`Delete article "${item.title || item.slug}"? This cannot be undone.`)) return;
+      try {
+        await api('/api/admin/articles/' + encodeURIComponent(item.slug), { method: 'DELETE' });
+        status('Article deleted.');
+        notifyMainSite('catalog');
+        secArticles();
+      } catch (e) {
+        status('Delete failed: ' + e.message, true);
+      }
+    });
+  }
+
   document.getElementById('artForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const title = document.getElementById('aTitle').value.trim();
@@ -1057,16 +1153,7 @@ async function secMedia() {
     if (!file) return;
     status('Uploading…');
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const tok = getToken();
-      const r = await fetch('/api/media/upload', {
-        method: 'POST',
-        headers: tok ? { 'Authorization': 'Bearer ' + tok } : {},
-        body: fd,
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'Upload failed');
+      const data = await uploadMediaFile(file);
       addMediaItem(data.url);
       status('Uploaded: ' + data.url);
     } catch (err) { status('Upload failed: ' + err.message, true); }
@@ -1464,16 +1551,7 @@ async function secHomepage() {
     const isVideo = file.type.startsWith('video/');
     status('Uploading media file…');
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const tok = getToken();
-      const r = await fetch('/api/media/upload', {
-        method: 'POST',
-        headers: tok ? { 'Authorization': 'Bearer ' + tok } : {},
-        body: fd,
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'Upload failed');
+      const data = await uploadMediaFile(file);
       heroMedia.push({ type: isVideo ? 'video' : 'image', url: data.url });
       renderHeroMedia();
       status('Media file uploaded.');
