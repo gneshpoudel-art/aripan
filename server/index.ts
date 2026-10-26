@@ -813,12 +813,14 @@ app.get('/api/admin/providers', authRequired, (_req, res) => {
   return res.json(getProviderHealthSnapshot())
 })
 
-// ── Static assets (local dev only) ───────────────────────────────────────────
+// ── Admin panel static files (all environments incl. Vercel) ────────────────
+if (adminRoot) app.use('/aripan-admin-secure', express.static(adminRoot))
+
+// ── Other static assets (local dev only) ─────────────────────────────────────
 if (!process.env.VERCEL) {
   const localMediaDir = path.resolve(process.cwd(), 'data', 'media')
   fs.mkdirSync(localMediaDir, { recursive: true })
   app.use('/media', express.static(localMediaDir))
-  if (adminRoot) app.use('/aripan-admin-secure', express.static(adminRoot))
 
   if (distIndex && fs.existsSync(distIndex)) {
     app.use(express.static(distRoot))

@@ -14,14 +14,10 @@
     }
   ],
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "server/index.ts"
-    },
-    {
-      "src": "/media/(.*)",
-      "dest": "server/index.ts"
-    }
+    { "src": "/api/(.*)", "dest": "server/index.ts" },
+    { "src": "/media/(.*)", "dest": "server/index.ts" },
+    { "src": "/aripan-admin-secure", "dest": "server/index.ts" },
+    { "src": "/aripan-admin-secure/(.*)", "dest": "server/index.ts" }
   ],
   "env": {
     "NODE_ENV": "production"
