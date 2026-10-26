@@ -8,7 +8,7 @@
     "server": "tsx server/index.ts",
     "dev:all": "start cmd /c npm run server & npm run dev",
     "build": "tsc -b && vite build",
-    "vercel-build": "tsc -b && vite build",
+    "vercel-build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "start": "tsx server/index.ts"

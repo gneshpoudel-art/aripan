@@ -16,6 +16,14 @@ services:
         name: Cache-Control
         value: no-cache
     routes:
+      # Serve the admin panel's own static files — must come BEFORE the SPA catch-all
+      - type: rewrite
+        source: /aripan-admin-secure
+        destination: /aripan-admin-secure/index.html
+      - type: rewrite
+        source: /aripan-admin-secure/*
+        destination: /aripan-admin-secure/index.html
+      # SPA catch-all — all other paths go to the React app
       - type: rewrite
         source: /*
         destination: /index.html
