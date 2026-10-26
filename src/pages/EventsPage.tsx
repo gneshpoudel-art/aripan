@@ -53,8 +53,7 @@ export function EventsPage() {
   const filtered =
     filter === 'all' ? events : events.filter((e) => e.status === filter)
 
-  const upcoming = events.filter((e) => e.status === 'upcoming' || e.status === 'ongoing')
-  const past = events.filter((e) => e.status === 'past')
+
 
   return (
     <div className="wrap page-hero">
