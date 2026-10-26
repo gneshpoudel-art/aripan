@@ -47,19 +47,20 @@ export function Footer() {
           <Link to="/collections">Collections</Link>
           <Link to="/shop">Shop</Link>
           <Link to="/journal">Journal</Link>
+          <Link to="/events">Events</Link>
           <Link to="/about">About</Link>
           <Link to="/commissions">Commissions</Link>
           <Link to="/contact">Contact</Link>
         </div>
         <div>
           <p className="eyebrow">Studio</p>
-          <a href={SITE.instagram} rel="noreferrer">
+          <a href={SITE.instagram} target="_blank" rel="noopener noreferrer">
             Instagram
           </a>
-          <a href={SITE.facebook} rel="noreferrer">
+          <a href={SITE.facebook} target="_blank" rel="noopener noreferrer">
             Facebook
           </a>
-          <a href={SITE.tiktok} rel="noreferrer">
+          <a href={SITE.tiktok} target="_blank" rel="noopener noreferrer">
             TikTok
           </a>
           <Link to="/privacy">Privacy</Link>

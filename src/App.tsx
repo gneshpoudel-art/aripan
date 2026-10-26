@@ -20,6 +20,7 @@ const WishlistPage = lazy(() => import('@/pages/WishlistPage').then((m) => ({ de
 const SearchPage = lazy(() => import('@/pages/SearchPage').then((m) => ({ default: m.SearchPage })))
 const DataDeletionPage = lazy(() => import('@/pages/DataDeletionPage').then((m) => ({ default: m.DataDeletionPage })))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })))
+const EventsPage = lazy(() => import('@/pages/EventsPage').then((m) => ({ default: m.EventsPage })))
 
 function Fallback() {
   return (
@@ -56,6 +57,7 @@ export default function App() {
             <Route path="/shipping" element={<LegalPage page="shipping" />} />
             <Route path="/cookies" element={<LegalPage page="cookies" />} />
             <Route path="/data-deletion" element={<DataDeletionPage />} />
+            <Route path="/events" element={<EventsPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

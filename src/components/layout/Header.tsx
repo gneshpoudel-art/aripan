@@ -9,10 +9,12 @@ const links = [
   { to: '/collections', label: 'Collections' },
   { to: '/shop', label: 'Shop' },
   { to: '/journal', label: 'Journal' },
+  { to: '/events', label: 'Events' },
   { to: '/about', label: 'About' },
   { to: '/commissions', label: 'Commissions' },
   { to: '/contact', label: 'Contact' },
 ]
+
 
 export function Header() {
   const { pathname } = useLocation()

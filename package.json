@@ -8,13 +8,16 @@
     "server": "tsx server/index.ts",
     "dev:all": "start cmd /c npm run server & npm run dev",
     "build": "tsc -b && vite build",
+    "vercel-build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "start": "tsx server/index.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
+    "@types/pg": "^8.23.1",
+    "@vercel/node": "^21.0.0",
     "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^13.0.3",
     "cors": "^2.8.6",
     "dotenv": "^18.0.1",
     "express": "^5.2.1",
@@ -23,6 +26,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.4.0",
+    "pg": "^8.23.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-helmet-async": "^3.0.0",
@@ -31,7 +35,6 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "@types/better-sqlite3": "^9.6.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",

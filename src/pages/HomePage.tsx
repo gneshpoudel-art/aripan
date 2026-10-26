@@ -7,6 +7,7 @@ import { ArtworkCard } from '@/components/product/ArtworkCard'
 import { Seo } from '@/components/seo/Seo'
 import { orgSchema, webSiteSchema } from '@/lib/schema'
 import { NewsletterBlock } from '@/components/ui/NewsletterBlock'
+import { SITE } from '@/lib/site'
 
 // ── Content-block types ────────────────────────────────────
 type HeroBlock = {
@@ -368,7 +369,7 @@ export function HomePage() {
           </p>
           <div className="grid-6">
             {instagram.map((w) => (
-              <a key={w.id} href="https://www.instagram.com/aripan.mithila" rel="noreferrer">
+              <a key={w.id} href={SITE.instagram} target="_blank" rel="noreferrer">
                 <img src={w.image} alt={w.title} loading="lazy" />
               </a>
             ))}

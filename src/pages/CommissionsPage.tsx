@@ -6,12 +6,18 @@ import { SITE } from '@/lib/site'
 export function CommissionsPage() {
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
-    const email = String(data.get('email') ?? '')
+    const name = String(data.get('name') ?? '').trim()
+    const email = String(data.get('email') ?? '').trim()
+    const country = String(data.get('country') ?? '').trim()
+    const budget = String(data.get('budget') ?? '').trim()
+    const description = String(data.get('description') ?? '').trim()
     const consent = data.get('consent') === 'on'
+
     if (!email.includes('@')) {
       setError('Please enter a valid email.')
       return
@@ -20,8 +26,38 @@ export function CommissionsPage() {
       setError('Please confirm we may use these details to reply.')
       return
     }
+    if (!budget || budget === '') {
+      setError('Please select a budget range.')
+      return
+    }
+
     setError('')
-    setDone(true)
+    setLoading(true)
+
+    try {
+      const res = await fetch('/api/commissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, country, budget, description }),
+      })
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        const msg = typeof body.error === 'string'
+          ? body.error
+          : Array.isArray(body.error)
+            ? body.error.map((e: { message: string }) => e.message).join(', ')
+            : 'Something went wrong. Please try again.'
+        setError(msg)
+        return
+      }
+
+      setDone(true)
+    } catch {
+      setError('Network error. Please check your connection and try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -78,17 +114,13 @@ export function CommissionsPage() {
               Project description
               <textarea name="description" required placeholder="Room, scale, motifs, timeline…" />
             </label>
-            <label>
-              Reference images (optional)
-              <input type="file" name="references" accept="image/*" multiple />
-            </label>
             <label className="consent">
               <input type="checkbox" name="consent" />
               <span>I consent to ARIPAN using these details solely to respond to this commission enquiry.</span>
             </label>
             {error ? <p className="error">{error}</p> : null}
-            <button className="btn" type="submit">
-              Send request
+            <button className="btn" type="submit" disabled={loading}>
+              {loading ? 'Sending…' : 'Send request'}
             </button>
           </form>
         )}

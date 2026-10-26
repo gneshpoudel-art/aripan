@@ -101,7 +101,7 @@ export function ProductPage() {
             </button>
             <button className="btn-ghost" type="button" aria-pressed={wished} onClick={() => toggleWishlist(product.slug)}>
               <span style={{ display: 'inline-flex', gap: '0.4rem', alignItems: 'center' }}>
-                <IconHeart title="" />
+                <IconHeart title="" filled={wished} />
                 {wished ? 'Saved' : 'Save to wishlist'}
               </span>
             </button>

@@ -7,8 +7,14 @@ const defaultOrigins = [
   'http://127.0.0.1:5173',
   'http://localhost:4000',
   'http://127.0.0.1:4000',
-  'https://aripan.onrender.com',
+  // Render frontend (update with your actual Render URL)
+  'https://aripan-frontend.onrender.com',
+  // Vercel preview/production domains
+  'https://aripan.vercel.app',
+  // Dynamic env vars set by Render and Vercel at runtime
   process.env.RENDER_EXTERNAL_URL ?? '',
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '',
+  process.env.FRONTEND_URL ?? '',
 ]
 
 const envOrigins = (process.env.ALLOWED_ORIGINS ?? '').split(',').map((v) => v.trim()).filter(Boolean)

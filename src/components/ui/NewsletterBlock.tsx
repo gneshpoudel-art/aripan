@@ -3,20 +3,43 @@ import { type FormEvent, useState } from 'react'
 export function NewsletterBlock() {
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
-    if (!String(data.get('email')).includes('@')) {
+    const email = String(data.get('email') ?? '').trim()
+    const consent = data.get('consent') === 'on'
+
+    if (!email.includes('@')) {
       setError('Please enter a valid email.')
       return
     }
-    if (data.get('consent') !== 'on') {
+    if (!consent) {
       setError('Please consent to receive studio letters.')
       return
     }
+
     setError('')
-    setDone(true)
+    setLoading(true)
+
+    try {
+      const res = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, consent: true }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setError(json?.error ?? 'Something went wrong. Please try again.')
+        return
+      }
+      setDone(true)
+    } catch {
+      setError('Network error. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (done) {
@@ -26,16 +49,16 @@ export function NewsletterBlock() {
   return (
     <form className="newsletter" onSubmit={onSubmit} style={{ maxWidth: '28rem' }}>
       <label>
-        Email
-        <input type="email" name="email" autoComplete="email" required />
+        Letters from the studio
+        <input type="email" name="email" autoComplete="email" placeholder="Email" required />
       </label>
       <label className="consent">
         <input type="checkbox" name="consent" />
-        <span>I consent to occasional studio letters from ADITY. Unsubscribe whenever you wish.</span>
+        <span>I consent to occasional studio letters. I may unsubscribe at any time. We will not share this address.</span>
       </label>
       {error ? <p className="error">{error}</p> : null}
-      <button className="btn" type="submit">
-        Subscribe
+      <button className="btn" type="submit" disabled={loading}>
+        {loading ? 'Subscribing…' : 'Subscribe'}
       </button>
     </form>
   )

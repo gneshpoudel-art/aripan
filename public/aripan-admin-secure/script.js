@@ -13,6 +13,8 @@ const TABS = [
   { key: 'collections',  label: 'Collections' },
   { key: 'gallery',      label: 'Gallery' },
   { key: 'articles',     label: 'Journal' },
+  { key: 'events',       label: 'Events' },
+  { key: 'commissions',  label: 'Commissions' },
   { key: 'legal',        label: 'Legal' },
   { key: 'media',        label: 'Media' },
   { key: 'analytics',    label: 'Analytics' },
@@ -192,10 +194,9 @@ function showLogin() {
         <h2>Sign in</h2>
         <div id="loginErr" class="form-error"></div>
         <form id="loginForm" method="dialog">
-          <div class="fg"><label>Email</label><input id="loginEmail" type="email" value="admin@aripan.art" required autocomplete="username" /></div>
-          <div class="fg"><label>Password</label><input id="loginPass" type="password" value="admin123" required autocomplete="current-password" /></div>
+          <div class="fg"><label>Email</label><input id="loginEmail" type="email" placeholder="admin@aripan.art" required autocomplete="username" /></div>
+          <div class="fg"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password" required autocomplete="current-password" /></div>
           <button type="submit" class="btn-primary" style="width:100%;margin-top:.5rem">Sign in</button>
-          <p style="font-size:0.75rem;color:#888;margin-top:0.75rem;text-align:center;">Demo credentials: admin@aripan.art / admin123</p>
         </form>
       </div>
     </div>
@@ -253,6 +254,8 @@ async function loadSection(key) {
     if (key === 'collections')  return await secCollections();
     if (key === 'gallery')      return await secGallery();
     if (key === 'articles')     return await secArticles();
+    if (key === 'events')       return await secEvents();
+    if (key === 'commissions')  return await secCommissions();
     if (key === 'legal')        return await secLegal();
     if (key === 'media')        return await secMedia();
     if (key === 'analytics')    return await secAnalytics();
@@ -266,10 +269,16 @@ async function loadSection(key) {
   }
 }
 
+
 // ── Overview ──────────────────────────────────────────────────
 async function secOverview() {
-  const [counts] = await Promise.all([api('/api/admin/overview')]);
+  const [counts, events, commissions] = await Promise.all([
+    api('/api/admin/overview'),
+    api('/api/events').catch(() => []),
+    api('/api/admin/commissions').catch(() => []),
+  ]);
   const m = document.getElementById('adminMain');
+  const newCommissions = commissions.filter(c => c.status === 'new').length;
   m.innerHTML = `
     <div class="sec-header"><h2>Overview</h2></div>
     <div class="stats-grid">
@@ -279,6 +288,11 @@ async function secOverview() {
       <div class="stat-card" data-goto="collections"><div class="stat-n">${counts.collections}</div><div class="stat-l">Collections</div></div>
       <div class="stat-card" data-goto="gallery"><div class="stat-n">${counts.galleryWorks}</div><div class="stat-l">Gallery</div></div>
       <div class="stat-card" data-goto="articles"><div class="stat-n">${counts.articles}</div><div class="stat-l">Articles</div></div>
+      <div class="stat-card" data-goto="events"><div class="stat-n">${events.length}</div><div class="stat-l">Events</div></div>
+      <div class="stat-card" data-goto="commissions" style="${newCommissions > 0 ? 'border:2px solid #1d3557' : ''}">
+        <div class="stat-n">${commissions.length}</div>
+        <div class="stat-l">Commissions${newCommissions > 0 ? ` <span style="font-size:.6rem;background:#1d3557;color:#fff;padding:.1rem .4rem;border-radius:.8rem;vertical-align:middle">${newCommissions} new</span>` : ''}</div>
+      </div>
       <div class="stat-card" data-goto="legal"><div class="stat-n">${counts.legalPages}</div><div class="stat-l">Legal pages</div></div>
     </div>
   `;
@@ -290,6 +304,7 @@ async function secOverview() {
     });
   });
 }
+
 
 // ── Products ──────────────────────────────────────────────────
 async function secProducts() {
@@ -1871,4 +1886,281 @@ async function secBiography() {
 
   document.getElementById('saveBioBtn').addEventListener('click', saveBiography);
   document.getElementById('saveBioTopBtn').addEventListener('click', saveBiography);
+}
+
+// ── Commissions ───────────────────────────────────────────────
+async function secCommissions() {
+  const enquiries = await api('/api/admin/commissions');
+  const m = document.getElementById('adminMain');
+  const statusColors = {
+    new: '#1d3557',
+    reviewing: '#457b9d',
+    accepted: '#2d6a4f',
+    declined: '#c0392b',
+    completed: '#555',
+  };
+
+  m.innerHTML = `
+    <div class="sec-header">
+      <h2>Commission Enquiries</h2>
+      <span class="meta" style="align-self:center">${enquiries.length} total</span>
+    </div>
+    <p class="meta" style="margin-bottom:1.5rem">
+      All commission requests submitted through the website. Update status and add notes for each.
+    </p>
+    <div id="commissionList"></div>
+  `;
+
+  const renderList = (items) => {
+    const list = document.getElementById('commissionList');
+    if (!list) return;
+    if (!items.length) {
+      list.innerHTML = '<p class="empty">No commission enquiries yet.</p>';
+      return;
+    }
+    list.innerHTML = items.map((en, i) => `
+      <div class="card" id="comm-card-${i}">
+        <div class="card-header">
+          <div>
+            <h3 style="margin-bottom:.25rem">${esc(en.name)}</h3>
+            <p class="meta">${esc(en.email)} &middot; ${esc(en.country)}</p>
+            <p class="meta">Budget: <strong>${esc(en.budget)}</strong> &middot; Submitted: ${fmtDate(en.created_at)}</p>
+          </div>
+          <div class="card-actions" style="flex-direction:column;align-items:flex-end;gap:.4rem">
+            <span style="font-size:.7rem;padding:.2rem .6rem;border-radius:2rem;background:${statusColors[en.status] || '#888'};color:#fff;font-family:var(--sans,sans-serif);text-transform:capitalize">
+              ${esc(en.status)}
+            </span>
+          </div>
+        </div>
+        <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border)">
+          <p style="font-size:.85rem;line-height:1.6;white-space:pre-wrap">${esc(en.description)}</p>
+          ${en.notes ? `<p class="meta" style="margin-top:.5rem;font-style:italic">Notes: ${esc(en.notes)}</p>` : ''}
+        </div>
+        <div class="form-grid" style="margin-top:1rem">
+          <div class="fg" style="max-width:180px">
+            <label>Status</label>
+            <select class="comm-status" data-id="${esc(en.id)}">
+              <option value="new" ${en.status==='new'?'selected':''}>New</option>
+              <option value="reviewing" ${en.status==='reviewing'?'selected':''}>Reviewing</option>
+              <option value="accepted" ${en.status==='accepted'?'selected':''}>Accepted</option>
+              <option value="declined" ${en.status==='declined'?'selected':''}>Declined</option>
+              <option value="completed" ${en.status==='completed'?'selected':''}>Completed</option>
+            </select>
+          </div>
+          <div class="fg" style="flex:1">
+            <label>Admin notes</label>
+            <input type="text" class="comm-notes" data-id="${esc(en.id)}" value="${esc(en.notes || '')}" placeholder="Internal notes…" />
+          </div>
+          <div class="fg" style="align-self:flex-end">
+            <button type="button" class="btn-primary comm-save" data-id="${esc(en.id)}" data-idx="${i}">Save</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    list.__items = items;
+
+    list.querySelectorAll('.comm-save').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const idx = parseInt(btn.dataset.idx);
+        const statusEl = list.querySelector(`.comm-status[data-id="${id}"]`);
+        const notesEl = list.querySelector(`.comm-notes[data-id="${id}"]`);
+        try {
+          await api(`/api/admin/commissions/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status: statusEl.value, notes: notesEl.value }),
+          });
+          list.__items[idx].status = statusEl.value;
+          list.__items[idx].notes = notesEl.value;
+          status('Commission updated.');
+          renderList(list.__items);
+        } catch (e) { status(e.message, true); }
+      });
+    });
+  };
+
+  renderList(enquiries);
+}
+
+// ── Events ────────────────────────────────────────────────────
+async function secEvents() {
+  const events = await api('/api/events');
+  const m = document.getElementById('adminMain');
+  m.innerHTML = `
+    <div class="sec-header">
+      <h2>Events</h2>
+      <button type="button" class="btn-primary" id="addEventBtn">+ Add event</button>
+    </div>
+    <div id="eventList"></div>
+  `;
+  document.getElementById('addEventBtn').addEventListener('click', () => showEventForm(null));
+  renderEventCards(events);
+}
+
+function renderEventCards(events) {
+  const list = document.getElementById('eventList');
+  if (!list) return;
+  if (!events.length) { list.innerHTML = '<p class="empty">No events yet. Click "+ Add event" to create one.</p>'; return; }
+  const statusBadge = (s) => {
+    const c = { upcoming: '#2d6a4f', ongoing: '#1d3557', past: '#888', cancelled: '#c0392b' };
+    return `<span style="font-size:.7rem;padding:.2rem .6rem;border-radius:2rem;background:${c[s]||'#888'};color:#fff;text-transform:capitalize;font-family:var(--sans,sans-serif)">${esc(s)}</span>`;
+  };
+  list.innerHTML = events.map((ev, i) => `
+    <div class="card">
+      <div class="card-header">
+        <div>
+          ${statusBadge(ev.status)}
+          <h3 style="margin:.35rem 0 .2rem">${esc(ev.title)}</h3>
+          <p class="meta">
+            📅 ${esc(ev.date)}${ev.time ? ' · ' + esc(ev.time) : ''}
+            ${ev.location ? ' · 📍 ' + esc(ev.location) : ''}
+            ${ev.entry_fee ? ' · 🎟️ ' + esc(ev.entry_fee) : ''}
+          </p>
+        </div>
+        <div class="card-actions">
+          ${ev.image ? `<img src="${esc(ev.image)}" class="thumb" onerror="this.onerror=null;this.classList.add('is-broken')" alt="" />` : ''}
+          <button type="button" class="btn-edit" data-idx="${i}">Edit</button>
+          <button type="button" class="btn-del" data-id="${esc(ev.id)}">Delete</button>
+        </div>
+      </div>
+      <p style="margin-top:.5rem;font-size:.85rem;line-height:1.6">${esc(ev.description).substring(0,200)}${ev.description.length>200?'…':''}</p>
+    </div>
+  `).join('');
+
+  list.__events = events;
+  list.querySelectorAll('.btn-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ev = list.__events[parseInt(btn.dataset.idx)];
+      showEventForm(ev);
+    });
+  });
+  list.querySelectorAll('.btn-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Delete this event? This cannot be undone.')) return;
+      try {
+        await api('/api/admin/events/' + btn.dataset.id, { method: 'DELETE' });
+        status('Event deleted.');
+        secEvents();
+      } catch (e) { status(e.message, true); }
+    });
+  });
+}
+
+function showEventForm(item) {
+  const m = document.getElementById('adminMain');
+  m.innerHTML = `
+    <div class="sec-header">
+      <h2>${item ? 'Edit event' : 'Add event'}</h2>
+      <button type="button" class="btn-ghost" id="cancelEvBtn">Back</button>
+    </div>
+    <form id="eventForm" method="dialog" novalidate>
+      <div class="form-grid">
+        <div class="fg">
+          <label>Title <span class="req">*</span></label>
+          <input id="evTitle" type="text" value="${esc(item?.title || '')}" required />
+        </div>
+        <div class="fg">
+          <label>Slug <span class="req">*</span></label>
+          <input id="evSlug" type="text" value="${esc(item?.slug || '')}" placeholder="url-friendly-slug" required />
+        </div>
+        <div class="fg">
+          <label>Date <span class="req">*</span></label>
+          <input id="evDate" type="date" value="${esc(item?.date || '')}" required />
+        </div>
+        <div class="fg">
+          <label>Time</label>
+          <input id="evTime" type="time" value="${esc(item?.time || '')}" />
+        </div>
+        <div class="fg">
+          <label>Location</label>
+          <input id="evLocation" type="text" value="${esc(item?.location || '')}" placeholder="Venue, City" />
+        </div>
+        <div class="fg">
+          <label>Entry Fee</label>
+          <input id="evEntryFee" type="text" value="${esc(item?.entry_fee || '')}" placeholder="e.g. Free, NRs. 500" />
+        </div>
+        <div class="fg">
+          <label>Status</label>
+          <select id="evStatus">
+            <option value="upcoming" ${(!item||item.status==='upcoming')?'selected':''}>Upcoming</option>
+            <option value="ongoing" ${item?.status==='ongoing'?'selected':''}>Ongoing</option>
+            <option value="past" ${item?.status==='past'?'selected':''}>Past</option>
+            <option value="cancelled" ${item?.status==='cancelled'?'selected':''}>Cancelled</option>
+          </select>
+        </div>
+        <div class="fg full">
+          <label>Event Image</label>
+          <div class="img-upload-row">
+            <label class="btn-upload">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Upload from device
+              <input type="file" id="evImageFile" accept="image/*" />
+            </label>
+            <span class="or">or</span>
+            <input type="text" id="evImage" value="${esc(item?.image || '')}" placeholder="Paste image URL (https://...)" style="flex:1" />
+          </div>
+          <div id="evImagePreview"></div>
+        </div>
+        <div class="fg full">
+          <label>Description <span class="req">*</span></label>
+          <textarea id="evDescription" rows="6" required placeholder="Full event description, what to expect, schedule…">${esc(item?.description || '')}</textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" id="saveEvBtn">Save event</button>
+        <button type="button" class="btn-ghost" id="cancelEvBtn2">Cancel</button>
+      </div>
+    </form>
+  `;
+
+  document.getElementById('cancelEvBtn').addEventListener('click', () => secEvents());
+  document.getElementById('cancelEvBtn2').addEventListener('click', () => secEvents());
+
+  // Auto-slug from title
+  const titleInput = document.getElementById('evTitle');
+  const slugInput = document.getElementById('evSlug');
+  if (!item) {
+    titleInput.addEventListener('input', () => {
+      slugInput.value = titleInput.value.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    });
+  }
+
+  // Image preview
+  setupSingleImageUpload({ inputId: 'evImage', fileId: 'evImageFile', previewContainerId: 'evImagePreview' });
+
+  // Save
+  document.getElementById('eventForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = document.getElementById('evTitle').value.trim();
+    const slug = document.getElementById('evSlug').value.trim();
+    const date = document.getElementById('evDate').value;
+    const description = document.getElementById('evDescription').value.trim();
+    if (!title || !slug || !date || !description) {
+      status('Title, slug, date and description are required.', true);
+      return;
+    }
+    const payload = {
+      title,
+      slug,
+      date,
+      time: document.getElementById('evTime').value || undefined,
+      location: document.getElementById('evLocation').value.trim() || undefined,
+      entryFee: document.getElementById('evEntryFee').value.trim() || undefined,
+      status: document.getElementById('evStatus').value,
+      image: document.getElementById('evImage').value.trim() || undefined,
+      description,
+    };
+    try {
+      if (item?.id) {
+        await api('/api/admin/events/' + item.id, { method: 'PUT', body: JSON.stringify(payload) });
+        status('Event updated.');
+      } else {
+        await api('/api/admin/events', { method: 'POST', body: JSON.stringify(payload) });
+        status('Event created.');
+      }
+      secEvents();
+    } catch (err) { status(err.message, true); }
+  });
 }

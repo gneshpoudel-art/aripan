@@ -1,5 +1,5 @@
-import { config } from './config.js'
-import { getSupabaseClient } from './providers.js'
+// supabase-sync.ts
+// Supabase is now the primary database. This module is kept for API compatibility.
 
 export type SyncStatus = {
   configured: boolean
@@ -9,88 +9,27 @@ export type SyncStatus = {
   queueLength: number
 }
 
-type SyncJob = {
-  id: string
-  entity: string
-  operation: string
-  payload: Record<string, unknown>
-  status: 'queued' | 'running' | 'done' | 'failed'
-  createdAt: string
-}
-
-const syncQueue: SyncJob[] = []
-
 export function getSupabaseSyncStatus(): SyncStatus {
-  const client = getSupabaseClient()
-  if (!client) {
-    return { configured: false, status: 'pending', queueLength: syncQueue.length }
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) {
+    return { configured: false, status: 'pending', queueLength: 0, message: 'Supabase credentials not set.' }
   }
-
   return {
     configured: true,
     status: 'ok',
-    message: 'Supabase client is configured and ready for synchronization.',
+    message: 'Supabase is the live database — all writes go directly to Supabase PostgreSQL.',
     lastSyncedAt: new Date().toISOString(),
-    queueLength: syncQueue.length,
+    queueLength: 0,
   }
 }
 
-export function queueSupabaseSync(entity: string, operation: string, payload: Record<string, unknown>) {
-  const job: SyncJob = {
-    id: `${entity}-${operation}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    entity,
-    operation,
-    payload,
-    status: 'queued',
-    createdAt: new Date().toISOString(),
-  }
-
-  syncQueue.push(job)
-  return job
+export function queueSupabaseSync(_entity: string, _operation: string, _payload: Record<string, unknown>) {
+  // No-op: Supabase is now the primary database, not a sync target.
+  return { status: 'ok', message: 'Supabase is the live database.' }
 }
 
-export async function runSupabaseSync(entity: string, operation: string, payload: Record<string, unknown> = {}) {
-  const client = getSupabaseClient()
-  const job = queueSupabaseSync(entity, operation, payload)
-
-  if (!client) {
-    return {
-      ...job,
-      status: 'pending',
-      message: 'Supabase is not configured yet.',
-    }
-  }
-
-  try {
-    const response = await fetch(`${client.url}/rest/v1/${entity}`, {
-      method: 'POST',
-      headers: {
-        apikey: client.key,
-        Authorization: `Bearer ${client.key}`,
-        'Content-Type': 'application/json',
-        Prefer: 'return=representation',
-      },
-      body: JSON.stringify({ operation, ...payload, syncedAt: new Date().toISOString() }),
-    })
-
-    if (!response.ok) {
-      return {
-        ...job,
-        status: 'failed',
-        message: `Supabase sync failed with ${response.status}`,
-      }
-    }
-
-    return {
-      ...job,
-      status: 'done',
-      message: 'Supabase sync completed.',
-    }
-  } catch (error) {
-    return {
-      ...job,
-      status: 'failed',
-      message: error instanceof Error ? error.message : 'Supabase sync failed unexpectedly.',
-    }
-  }
+export async function runSupabaseSync(_entity: string, _operation: string, _payload: Record<string, unknown> = {}) {
+  // No-op: Supabase is now the primary database, not a sync target.
+  return { status: 'ok', message: 'Supabase is the live database — sync is not needed.' }
 }

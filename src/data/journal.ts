@@ -22,7 +22,7 @@ export const articles: Article[] = [
     body: [
       'Mithila painting is often introduced as a folk style, which is a category invented by museums to keep certain rooms tidy. In the courtyards of the Mithila region in Nepal, the work is closer to architecture. It occupies the same plane as a door, a grain store, a threshold. It is meant to be lived beside, not glanced at from a corridor.',
       'When ARIPAN draws a Tree of Life on handmade paper, the composition is still thinking like a wall. The lower register holds water because a wall meets earth. The canopy is crowded because a wall must protect. Empty space is not a modernist luxury; it is a pause in speech.',
-      'This is why the studio resists the language of “décor.” A painting that began as a house does not become a cushion cover without cost. Apparel and small objects exist in the ARIPAN catalogue, but they are fragments — quotations of a larger grammar — never replacements for the wall.',
+      'This is why the studio resists the language of “décor.” A painting that began as a house does not become a cushion cover without cost. Apparel and small objects exist in the ARIPAN catalogue, but they are fragments quotations of a larger grammar — never replacements for the wall.',
       'Visitors who stay with a work for more than a few seconds often begin counting fish, then birds, then the smaller triangles that fill a peacock’s neck. That counting is a form of reading. The painting is literate. It expects time.',
     ],
   },
@@ -77,7 +77,7 @@ export const articles: Article[] = [
     slug: 'exhibition-diary',
     title: 'Exhibition Diary: Rooms, Not Grids',
     excerpt:
-      'How ARIPAN prefers to hang work — and why the online gallery copies the tempo of a physical room.',
+      'How ARIPAN prefers to hang work and why the online gallery copies the tempo of a physical room.',
     date: '2025-11-21',
     readMinutes: 6,
     image: '/artworks/tree-of-life.png',

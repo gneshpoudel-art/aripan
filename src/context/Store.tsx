@@ -107,14 +107,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           return
         }
 
-        // Step 3: add item to cart
+        // Step 3: determine message before setState then fire toast once
+        const alreadyIn = cart.some((l) => l.slug === slug)
+        showToast(alreadyIn ? 'Quantity updated in cart' : 'Added to cart', 'success')
         setCart((lines) => {
           const found = lines.find((l) => l.slug === slug)
-          if (found) {
-            showToast('Quantity updated in cart', 'success')
-            return lines.map((l) => (l.slug === slug ? { ...l, qty: l.qty + 1 } : l))
-          }
-          showToast('Added to cart', 'success')
+          if (found) return lines.map((l) => (l.slug === slug ? { ...l, qty: l.qty + 1 } : l))
           return [...lines, { slug, qty: 1 }]
         })
       },
@@ -122,12 +120,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setCart((lines) => (qty <= 0 ? lines.filter((l) => l.slug !== slug) : lines.map((l) => (l.slug === slug ? { ...l, qty } : l)))),
       removeFromCart: (slug) => setCart((lines) => lines.filter((l) => l.slug !== slug)),
       clearCart: () => setCart([]),
-      toggleWishlist: (slug) =>
-        setWishlist((ids) => {
-          const isIn = ids.includes(slug)
-          showToast(isIn ? 'Removed from favourites' : 'Added to favourites', isIn ? 'info' : 'success')
-          return isIn ? ids.filter((id) => id !== slug) : [...ids, slug]
-        }),
+      toggleWishlist: (slug) => {
+        // Read current state first, then show toast ONCE, then update state
+        const isIn = wishlist.includes(slug)
+        showToast(isIn ? 'Removed from favourites' : 'Added to favourites', isIn ? 'info' : 'success')
+        setWishlist((ids) => (ids.includes(slug) ? ids.filter((id) => id !== slug) : [...ids, slug]))
+      },
       inWishlist: (slug) => wishlist.includes(slug),
       cartCount: cart.reduce((n, l) => n + l.qty, 0),
       wishlistCount: wishlist.length,

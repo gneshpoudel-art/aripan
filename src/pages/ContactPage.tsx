@@ -49,15 +49,15 @@ export function ContactPage() {
           </p>
           <p>{SITE.responseTime} Press, collecting, and collaboration are all welcome; please say which in your subject line.</p>
           <p>
-            <a href={SITE.instagram} rel="noreferrer">
+            <a href={SITE.instagram} target="_blank" rel="noopener noreferrer">
               Instagram
             </a>
             {' · '}
-            <a href={SITE.facebook} rel="noreferrer">
+            <a href={SITE.facebook} target="_blank" rel="noopener noreferrer">
               Facebook
             </a>
             {' · '}
-            <a href={SITE.tiktok} rel="noreferrer">
+            <a href={SITE.tiktok} target="_blank" rel="noopener noreferrer">
               TikTok
             </a>
           </p>
