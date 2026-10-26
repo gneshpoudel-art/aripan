@@ -54,13 +54,25 @@ function notifyMainSite(type = 'catalog', key = null) {
 }
 
 // ── API ───────────────────────────────────────────────────────
+function getApiBase() {
+  const custom = localStorage.getItem('aripan-admin-api-base');
+  if (custom) return custom.replace(/\/$/, '');
+  return '';
+}
+
 async function api(path, opts = {}) {
   const tok = getToken();
   const isFormData = opts.body instanceof FormData;
   const headers = {};
   if (tok) headers['Authorization'] = 'Bearer ' + tok;
   if (!isFormData) headers['Content-Type'] = 'application/json';
-  const r = await fetch(path, { ...opts, headers });
+  const base = getApiBase();
+  const targetUrl = path.startsWith('http') ? path : `${base}${path}`;
+  const r = await fetch(targetUrl, { ...opts, headers });
+  const contentType = r.headers.get('content-type') || '';
+  if (contentType.includes('text/html')) {
+    throw new Error('API server returned HTML instead of JSON. Ensure your Node.js backend is running as a Web Service.');
+  }
   const body = await r.json().catch(() => ({}));
   if (!r.ok) {
     if (r.status === 401 && tok) {
