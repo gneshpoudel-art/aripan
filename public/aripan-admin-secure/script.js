@@ -118,6 +118,47 @@ function getYouTubeId(url) {
   return null;
 }
 
+// ── Media Upload Helper ───────────────────────────────────────
+async function uploadMediaFile(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const tok = getToken();
+  const url = API_BASE + '/api/media/upload';
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: tok ? { 'Authorization': 'Bearer ' + tok } : {},
+    body: fd,
+  });
+  let data = {};
+  try {
+    data = await r.json();
+  } catch {
+    throw new Error(`Server returned HTTP ${r.status} (${r.statusText || 'error'}). Non-JSON response received.`);
+  }
+  if (!r.ok) {
+    if (r.status === 401 && tok) {
+      clearToken();
+      showLogin();
+      const loginErr = document.getElementById('loginErr');
+      if (loginErr) loginErr.textContent = 'Session expired or token invalid. Please sign in again.';
+      throw new Error('Session expired. Please sign in again.');
+    }
+    let msg = 'Upload failed (HTTP ' + r.status + ')';
+    if (typeof data.error === 'string') {
+      msg = data.error;
+    } else if (Array.isArray(data.error)) {
+      msg = data.error.map(e => `${e.path?.join('.') || 'field'}: ${e.message}`).join(', ');
+    } else if (data.message) {
+      msg = data.message;
+    }
+    throw new Error(msg);
+  }
+  return data;
+}
+if (typeof window !== 'undefined') {
+  window.uploadMediaFile = uploadMediaFile;
+}
+
 // ── Single image uploader & preview binder ─────────────────────
 function setupSingleImageUpload({ inputId, fileId, previewContainerId }) {
   const input = document.getElementById(inputId);
@@ -153,27 +194,6 @@ function setupSingleImageUpload({ inputId, fileId, previewContainerId }) {
   input.addEventListener('input', updatePreview);
   input.addEventListener('change', updatePreview);
   updatePreview();
-
-// ── Media Upload Helper ───────────────────────────────────────
-async function uploadMediaFile(file) {
-  const fd = new FormData();
-  fd.append('file', file);
-  const tok = getToken();
-  const url = API_BASE + '/api/media/upload';
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: tok ? { 'Authorization': 'Bearer ' + tok } : {},
-    body: fd,
-  });
-  let data = {};
-  try {
-    data = await r.json();
-  } catch {
-    throw new Error(`Server returned HTTP ${r.status} (${r.statusText || 'error'}). Non-JSON response received.`);
-  }
-  if (!r.ok) throw new Error(data.error || 'Upload failed (HTTP ' + r.status + ')');
-  return data;
-}
 
   if (fileInput) {
     fileInput.addEventListener('change', async (e) => {
