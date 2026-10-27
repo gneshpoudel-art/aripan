@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { StoreContext, type CartLine, type Store, type Theme } from '@/context/store-context'
 import { useAuth } from '@/context/AuthContext'
+import { useCatalog } from '@/context/CatalogContext'
 import { CookieConsentBanner, hasConsented } from '@/components/ui/CookieConsentBanner'
 import { useToast } from '@/context/ToastContext'
 
@@ -16,6 +17,7 @@ function read<T>(key: string, fallback: T): T {
 export function StoreProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, signInWithGoogle } = useAuth()
   const { showToast } = useToast()
+  const { products } = useCatalog()
   const [theme, setTheme] = useState<Theme>(() => {
     const initial = read<Theme>('aripan-theme', 'gallery')
     if (typeof document !== 'undefined') {
@@ -28,6 +30,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Consent banner state
   const [consentPendingSlug, setConsentPendingSlug] = useState<string | null>(null)
+
+  const isProductSold = useCallback(
+    (slug: string) => {
+      const item = products.find((p) => p.slug === slug || p.id === slug)
+      return item?.availability === 'sold'
+    },
+    [products],
+  )
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme === 'vintage' ? 'vintage' : 'gallery')
@@ -50,11 +60,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         try {
           const action = JSON.parse(pendingAction) as { type: string; slug: string }
           if (action.type === 'add_to_cart' && action.slug) {
-            setCart((lines) => {
-              const found = lines.find((l) => l.slug === action.slug)
-              if (found) return lines.map((l) => (l.slug === action.slug ? { ...l, qty: l.qty + 1 } : l))
-              return [...lines, { slug: action.slug, qty: 1 }]
-            })
+            if (isProductSold(action.slug)) {
+              showToast('This artwork was marked as sold and cannot be added to cart.', 'error')
+            } else {
+              setCart((lines) => {
+                const found = lines.find((l) => l.slug === action.slug)
+                if (found) return lines.map((l) => (l.slug === action.slug ? { ...l, qty: l.qty + 1 } : l))
+                return [...lines, { slug: action.slug, qty: 1 }]
+              })
+            }
           }
         } catch {
           // ignore malformed data
@@ -63,13 +77,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
       }
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, isProductSold, showToast])
 
   // Called when the user accepts the consent banner
   const handleConsentAccept = useCallback(() => {
     const slug = consentPendingSlug
     setConsentPendingSlug(null)
     if (!slug) return
+
+    if (isProductSold(slug)) {
+      showToast('This artwork has been sold and cannot be added to cart.', 'error')
+      return
+    }
 
     if (!isAuthenticated) {
       localStorage.setItem('aripan-pending-action', JSON.stringify({ type: 'add_to_cart', slug }))
@@ -81,7 +100,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (found) return lines.map((l) => (l.slug === slug ? { ...l, qty: l.qty + 1 } : l))
       return [...lines, { slug, qty: 1 }]
     })
-  }, [consentPendingSlug, isAuthenticated, signInWithGoogle])
+  }, [consentPendingSlug, isAuthenticated, signInWithGoogle, isProductSold, showToast])
 
   const handleConsentDecline = useCallback(() => {
     setConsentPendingSlug(null)
@@ -94,6 +113,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       cart,
       wishlist,
       addToCart: (slug) => {
+        // Step 0: check if product is marked as sold
+        const item = products.find((p) => p.slug === slug || p.id === slug)
+        if (item?.availability === 'sold') {
+          showToast(`Sold Out — "${item.name || 'This artwork'}" is no longer available.`, 'error')
+          return
+        }
+
         // Step 1: check cookie consent — show banner first if not yet given
         if (!hasConsented()) {
           setConsentPendingSlug(slug)
@@ -130,7 +156,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       cartCount: cart.reduce((n, l) => n + l.qty, 0),
       wishlistCount: wishlist.length,
     }),
-    [theme, cart, wishlist, isAuthenticated, signInWithGoogle, showToast],
+    [theme, cart, wishlist, isAuthenticated, signInWithGoogle, showToast, products],
   )
 
   return (

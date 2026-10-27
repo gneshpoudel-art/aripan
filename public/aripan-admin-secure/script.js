@@ -368,24 +368,61 @@ function renderProductCards(products) {
   const list = document.getElementById('productList');
   if (!list) return;
   if (!products.length) { list.innerHTML = '<p class="empty">No products yet.</p>'; return; }
-  list.innerHTML = products.map((p, i) => `
-    <div class="card">
+  list.innerHTML = products.map((p, i) => {
+    const isSold = p.availability === 'sold';
+    const isReserved = p.availability === 'reserved';
+    const badgeStyle = isSold
+      ? 'background:#dc2626;color:#fff;'
+      : isReserved
+      ? 'background:#d97706;color:#fff;'
+      : 'background:#16a34a;color:#fff;';
+    const badgeText = isSold ? 'SOLD OUT' : isReserved ? 'RESERVED' : 'AVAILABLE';
+
+    return `
+    <div class="card ${isSold ? 'card-sold' : ''}">
       <div class="card-header">
         <div>
-          <h3>${esc(p.name)}</h3>
-          <p class="meta">${esc(p.slug)} &middot; NRs. ${p.price} &middot; ${esc(p.availability || '')}</p>
+          <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+            <h3 style="margin:0">${esc(p.name)}</h3>
+            <span style="${badgeStyle}font-size:.68rem;font-weight:700;padding:.15rem .45rem;border-radius:4px;letter-spacing:.04em">${badgeText}</span>
+          </div>
+          <p class="meta" style="margin:.3rem 0">${esc(p.slug)} &middot; NRs. ${p.price} &middot; Status: <strong>${esc(p.availability === 'sold' ? 'Sold Out' : p.availability || 'available')}</strong></p>
           <p class="meta">Collections: ${(p.collections || []).join(', ') || '—'}</p>
         </div>
-        <div class="card-actions">
+        <div class="card-actions" style="align-items:center">
           ${p.images && p.images[0] ? `<img src="${esc(p.images[0])}" class="thumb" onerror="this.onerror=null;this.classList.add('is-broken')" />` : ''}
+          <button type="button" class="btn-toggle-sold" data-idx="${i}" style="border:1px solid ${isSold ? '#16a34a' : '#dc2626'};color:${isSold ? '#16a34a' : '#dc2626'};background:transparent;padding:.35rem .65rem;border-radius:4px;cursor:pointer;font-size:.78rem;font-weight:600">
+            ${isSold ? 'Mark Available' : 'Mark Sold Out'}
+          </button>
           <button type="button" class="btn-edit" data-idx="${i}">Edit</button>
           <button type="button" class="btn-del" data-id="${esc(p.id)}">Delete</button>
         </div>
       </div>
     </div>
-  `).join('');
+  `;}).join('');
 
   list.__products = products;
+  list.querySelectorAll('.btn-toggle-sold').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = parseInt(btn.dataset.idx);
+      const p = list.__products[idx];
+      if (!p) return;
+      const newAvail = p.availability === 'sold' ? 'available' : 'sold';
+      btn.disabled = true;
+      btn.textContent = 'Updating…';
+      try {
+        const payload = { ...p, availability: newAvail };
+        await api('/api/admin/products/' + p.id, { method: 'PUT', body: JSON.stringify(payload) });
+        status(`Product "${p.name}" marked as ${newAvail}.`);
+        notifyMainSite('catalog');
+        secProducts();
+      } catch (err) {
+        status('Failed to update product: ' + err.message, true);
+        btn.disabled = false;
+        btn.textContent = p.availability === 'sold' ? 'Mark Available' : 'Mark as Sold';
+      }
+    });
+  });
   list.querySelectorAll('.btn-edit').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.dataset.idx);
@@ -439,9 +476,9 @@ function showProductForm(item) {
         <div class="fg">
           <label>Availability</label>
           <select id="pAvail">
-            <option value="available" ${item?.availability === 'available' || !item ? 'selected' : ''}>Available</option>
+            <option value="available" ${item?.availability === 'available' || item?.availability === 'in-stock' || !item ? 'selected' : ''}>Available</option>
             <option value="reserved" ${item?.availability === 'reserved' ? 'selected' : ''}>Reserved</option>
-            <option value="sold" ${item?.availability === 'sold' ? 'selected' : ''}>Sold</option>
+            <option value="sold" ${item?.availability === 'sold' ? 'selected' : ''}>Sold Out</option>
           </select>
         </div>
         <div class="fg">
@@ -1412,7 +1449,14 @@ async function secHomepage() {
   const heroMedia = Array.isArray(hero.media) && hero.media.length
     ? [...hero.media]
     : [{ type: 'image', url: '/artworks/tree-of-life.png' }];
-  const stmtParagraphs = Array.isArray(statement.paragraphs) ? statement.paragraphs : [];
+  const defaultStatementParas = [
+    'I paint from a tradition that began on walls and still thinks like a house. The work is contemporary only in the sense that I am alive now — the grammar is older, and I am responsible to it.',
+    'Mithila painting is often asked to be charming. I prefer it to be exact. Double lines, filled grounds, fish, lotus, sun: these are not motifs to be rearranged for a mood board. They are a language. My studio in Nepal is a place of slow looking, earth pigment, and the discipline of not leaving a form empty merely because emptiness is fashionable.',
+    'ARIPAN exists so the work can travel without becoming a souvenir. Original paintings remain unique. Prints are treated as impressions, not substitutes. Apparel and small objects carry fragments of the line. Nothing is designed to shout. The painting is the host; the website, the room.',
+  ];
+  const stmtParagraphs = Array.isArray(statement.paragraphs) && statement.paragraphs.length
+    ? statement.paragraphs
+    : defaultStatementParas;
 
   m.innerHTML = `
     <div class="sec-header"><h2>Homepage content</h2></div>
@@ -1589,6 +1633,7 @@ async function secHomepage() {
     };
     try {
       await api('/api/admin/content/blocks/hero', { method: 'PUT', body: JSON.stringify(payload) });
+      try { localStorage.setItem('aripan_hero_block', JSON.stringify(payload)); } catch {}
       notifyMainSite('content', 'hero');
       status('Hero section saved — live on the website.');
     } catch (err) { status('Save failed: ' + err.message, true); }
@@ -1608,6 +1653,7 @@ async function secHomepage() {
     };
     try {
       await api('/api/admin/content/blocks/statement', { method: 'PUT', body: JSON.stringify(payload) });
+      try { localStorage.setItem('aripan_statement_block', JSON.stringify(payload)); } catch {}
       notifyMainSite('content', 'statement');
       status('Artist statement saved — live on the website.');
     } catch (err) { status('Save failed: ' + err.message, true); }

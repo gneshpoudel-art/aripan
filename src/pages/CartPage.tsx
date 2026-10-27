@@ -61,6 +61,7 @@ export function CartPage() {
   const { user, token } = useAuth()
   const lines = cartProducts(cart, products)
   const total = lines.reduce((n, l) => n + l.product.price * l.qty, 0)
+  const hasSoldItems = lines.some((l) => l.product.availability === 'sold')
 
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState<CheckoutForm>({
@@ -195,6 +196,11 @@ export function CartPage() {
 
     if (lines.length === 0) {
       setOrderError('Cart is empty. Please add artworks to your cart before submitting an enquiry.')
+      return
+    }
+
+    if (hasSoldItems) {
+      setOrderError('One or more artworks in your cart are marked as sold. Please remove them before submitting.')
       return
     }
 
@@ -403,43 +409,110 @@ export function CartPage() {
       ) : (
         <div className="grid-2" style={{ alignItems: 'start', marginBottom: '4rem' }}>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {lines.map(({ product, qty }) => (
-              <li key={product.slug} style={{ display: 'grid', gridTemplateColumns: '6rem 1fr auto', gap: '1rem', padding: '1.2rem 0', borderTop: '1px solid var(--line)' }}>
-                <img src={product.images[0]} alt="" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '4px' }} />
-                <div>
-                  <Link to={`/product/${product.slug}`} style={{ fontWeight: 600 }}>{product.name}</Link>
-                  <p className="muted" style={{ margin: '0.2rem 0' }}>{formatPrice(product.price)}</p>
-                  <label style={{ fontSize: '0.82rem' }}>
-                    Quantity
-                    <input
-                      type="number"
-                      min={1}
-                      max={12}
-                      value={qty}
-                      onChange={(e) => updateQty(product.slug, Number(e.target.value))}
-                      style={{ maxWidth: '5rem', marginLeft: '0.5rem', padding: '0.2rem 0.4rem' }}
-                    />
-                  </label>
-                </div>
-                <button type="button" className="btn-ghost" onClick={() => removeFromCart(product.slug)}>
-                  Remove
-                </button>
-              </li>
-            ))}
+            {lines.map(({ product, qty }) => {
+              const isItemSold = product.availability === 'sold'
+              return (
+                <li key={product.slug} style={{ display: 'grid', gridTemplateColumns: '6rem 1fr auto', gap: '1rem', padding: '1.2rem 0', borderTop: '1px solid var(--line)', opacity: isItemSold ? 0.8 : 1 }}>
+                  <div style={{ position: 'relative' }}>
+                    <img src={product.images[0]} alt="" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '4px' }} />
+                    {isItemSold && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          top: '0.25rem',
+                          left: '0.25rem',
+                          background: '#dc2626',
+                          color: '#ffffff',
+                          fontSize: '0.62rem',
+                          fontWeight: 700,
+                          padding: '0.15rem 0.4rem',
+                          borderRadius: '3px',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        Sold
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <Link to={`/product/${product.slug}`} style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <span>{product.name}</span>
+                      {isItemSold && (
+                        <span style={{ color: '#dc2626', fontSize: '0.75rem', fontWeight: 700 }}>
+                          [SOLD]
+                        </span>
+                      )}
+                    </Link>
+                    <p className="muted" style={{ margin: '0.2rem 0' }}>{formatPrice(product.price)}</p>
+                    {isItemSold ? (
+                      <p style={{ color: '#dc2626', fontSize: '0.82rem', margin: '0.35rem 0 0', fontWeight: 500 }}>
+                        This artwork has been sold and cannot be ordered. Please remove it.
+                      </p>
+                    ) : (
+                      <label style={{ fontSize: '0.82rem' }}>
+                        Quantity
+                        <input
+                          type="number"
+                          min={1}
+                          max={12}
+                          value={qty}
+                          onChange={(e) => updateQty(product.slug, Number(e.target.value))}
+                          style={{ maxWidth: '5rem', marginLeft: '0.5rem', padding: '0.2rem 0.4rem' }}
+                        />
+                      </label>
+                    )}
+                  </div>
+                  <button type="button" className="btn-ghost" onClick={() => removeFromCart(product.slug)}>
+                    Remove
+                  </button>
+                </li>
+              )
+            })}
           </ul>
           <aside style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: '1rem', border: '1px solid var(--line)' }}>
             <p className="price" style={{ fontSize: '1.8rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>{formatPrice(total)}</p>
             <p className="muted" style={{ fontSize: '0.88rem', lineHeight: 1.5 }}>
               To complete your acquisition, please fill in your delivery details and enquiry directly with the studio.
             </p>
+            {hasSoldItems && (
+              <div
+                style={{
+                  marginTop: '1rem',
+                  padding: '0.75rem 1rem',
+                  background: 'rgba(220, 38, 38, 0.08)',
+                  border: '1px solid rgba(220, 38, 38, 0.3)',
+                  borderRadius: '8px',
+                  color: '#dc2626',
+                  fontSize: '0.84rem',
+                  lineHeight: 1.4,
+                }}
+              >
+                ⚠️ Your cart contains artworks that have already been sold. Please remove them before proceeding.
+              </div>
+            )}
             <button
               id="enquire-to-purchase-btn"
               type="button"
               className="btn"
-              style={{ width: '100%', marginTop: '1rem' }}
-              onClick={() => { setShowModal(true); setOrderSuccess(false); setOrderError('') }}
+              disabled={hasSoldItems}
+              style={{
+                width: '100%',
+                marginTop: '1rem',
+                ...(hasSoldItems
+                  ? { opacity: 0.65, cursor: 'not-allowed', backgroundColor: '#71717a', borderColor: '#71717a' }
+                  : {}),
+              }}
+              onClick={() => {
+                if (hasSoldItems) {
+                  setOrderError('Please remove sold artworks from your cart before proceeding.')
+                  return
+                }
+                setShowModal(true)
+                setOrderSuccess(false)
+                setOrderError('')
+              }}
             >
-              Enquire to purchase
+              {hasSoldItems ? 'Remove Sold Works to Proceed' : 'Enquire to purchase'}
             </button>
           </aside>
         </div>

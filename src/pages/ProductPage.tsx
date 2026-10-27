@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useCatalogUtils } from '@/context/CatalogContext'
 import { formatPrice } from '@/lib/format'
 import { useStore } from '@/hooks/useStore'
+import { useToast } from '@/context/ToastContext'
 import { ArtworkCard } from '@/components/product/ArtworkCard'
 import { ProductGallery } from '@/components/product/ProductGallery'
 import { Seo } from '@/components/seo/Seo'
@@ -15,6 +16,7 @@ export function ProductPage() {
   const { getProduct, relatedProducts, collections, loading } = useCatalogUtils()
   const product = getProduct(slug)
   const { addToCart, toggleWishlist, inWishlist } = useStore()
+  const { showToast } = useToast()
 
   if (!product) {
     if (loading) {
@@ -30,8 +32,16 @@ export function ProductPage() {
   const collection = product.collections?.length ? collections.find((c) => product.collections.includes(c.slug)) : undefined
   const related = relatedProducts(product)
   const wished = inWishlist(product.slug)
-  const availability =
-    product.availability === 'in-stock' ? 'In the studio' : product.availability === 'made-to-order' ? 'Made to order' : 'No longer available'
+  const isSold = product.availability === 'sold'
+  const isReserved = product.availability === 'reserved'
+  const availability = isSold
+    ? 'Sold out'
+    : isReserved
+    ? 'Reserved'
+    : product.availability === 'made-to-order'
+    ? 'Made to order'
+    : 'In the studio (Available)'
+
   const share = async () => {
     const url = absUrl(`/product/${product.slug}`)
     if (navigator.share) {
@@ -93,10 +103,37 @@ export function ProductPage() {
         <div>
           <p className="eyebrow">{collection?.name}</p>
           <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.8rem)' }}>{product.name}</h1>
-          <p className="price">{formatPrice(product.price, product.currency)}</p>
+          <p className="price" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <span>{formatPrice(product.price, product.currency)}</span>
+            {isSold && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '0.2rem 0.65rem',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  borderRadius: '9999px',
+                  backgroundColor: '#dc2626',
+                  color: '#ffffff',
+                }}
+              >
+                Sold Out
+              </span>
+            )}
+          </p>
           <div dangerouslySetInnerHTML={{ __html: product.description }} />
           <p>
-            <strong>{availability}</strong>
+            <strong>
+              {availability}
+              {isSold && (
+                <span style={{ marginLeft: '0.6rem', color: '#dc2626', fontWeight: 600 }}>
+                  ● Sold Out
+                </span>
+              )}
+            </strong>
             <br />
             {product.medium}
             <br />
@@ -105,8 +142,29 @@ export function ProductPage() {
             SKU {product.sku}
           </p>
           <div className="btn-row">
-            <button className="btn" type="button" disabled={product.availability === 'sold'} onClick={() => addToCart(product.slug)}>
-              Add to cart
+            <button
+              className={`btn ${isSold ? 'btn-sold' : ''}`}
+              type="button"
+              onClick={() => {
+                if (isSold) {
+                  showToast('Sold out — This artwork is no longer available.', 'error')
+                  return
+                }
+                addToCart(product.slug)
+              }}
+              style={
+                isSold
+                  ? {
+                      backgroundColor: '#71717a',
+                      borderColor: '#71717a',
+                      color: '#ffffff',
+                      cursor: 'not-allowed',
+                      opacity: 0.85,
+                    }
+                  : undefined
+              }
+            >
+              {isSold ? 'Sold Out' : 'Add to cart'}
             </button>
             <button className="btn-ghost" type="button" aria-pressed={wished} onClick={() => toggleWishlist(product.slug)}>
               <span style={{ display: 'inline-flex', gap: '0.4rem', alignItems: 'center' }}>
@@ -121,6 +179,33 @@ export function ProductPage() {
               </span>
             </button>
           </div>
+
+          {isSold && (
+            <div
+              style={{
+                marginTop: '1.5rem',
+                padding: '1rem 1.25rem',
+                background: 'rgba(220, 38, 38, 0.08)',
+                border: '1px solid rgba(220, 38, 38, 0.3)',
+                borderRadius: '8px',
+              }}
+            >
+              <p style={{ margin: 0, fontWeight: 600, color: '#dc2626', fontSize: '0.95rem' }}>
+                ● This original artwork has been sold
+              </p>
+              <p style={{ margin: '0.35rem 0 0', fontSize: '0.88rem', color: 'var(--ink-muted)' }}>
+                This unique piece is in a private collection. You can enquire about a{' '}
+                <Link to="/commissions" style={{ textDecoration: 'underline', color: 'var(--ink)' }}>
+                  custom commission
+                </Link>{' '}
+                or browse other{' '}
+                <Link to="/shop" style={{ textDecoration: 'underline', color: 'var(--ink)' }}>
+                  available artworks
+                </Link>.
+              </p>
+            </div>
+          )}
+
           <h2 style={{ fontSize: '1.6rem', marginTop: '2.5rem' }}>The work</h2>
           <div dangerouslySetInnerHTML={{ __html: product.story }} />
           <ul>

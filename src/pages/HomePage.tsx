@@ -198,13 +198,35 @@ export function HomePage() {
   const instagram = galleryWorks.slice(2, 8)
   const reduce = useReducedMotion()
 
-  const [hero, setHero] = useState<HeroBlock>(DEFAULT_HERO)
-  const [statement, setStatement] = useState<StatementBlock>(DEFAULT_STATEMENT)
+  const [hero, setHero] = useState<HeroBlock>(() => {
+    try {
+      const cached = localStorage.getItem('aripan_hero_block')
+      if (cached) return JSON.parse(cached)
+    } catch {}
+    return DEFAULT_HERO
+  })
+  const [statement, setStatement] = useState<StatementBlock>(() => {
+    try {
+      const cached = localStorage.getItem('aripan_statement_block')
+      if (cached) return JSON.parse(cached)
+    } catch {}
+    return DEFAULT_STATEMENT
+  })
 
   useEffect(() => {
     const load = () => {
-      fetchBlock<HeroBlock>('hero').then((b) => b && setHero(b))
-      fetchBlock<StatementBlock>('statement').then((b) => b && setStatement(b))
+      fetchBlock<HeroBlock>('hero').then((b) => {
+        if (b) {
+          setHero(b)
+          try { localStorage.setItem('aripan_hero_block', JSON.stringify(b)) } catch {}
+        }
+      })
+      fetchBlock<StatementBlock>('statement').then((b) => {
+        if (b) {
+          setStatement(b)
+          try { localStorage.setItem('aripan_statement_block', JSON.stringify(b)) } catch {}
+        }
+      })
     }
     load()
 
@@ -217,12 +239,23 @@ export function HomePage() {
       bc.onmessage = () => load()
     } catch {}
 
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'aripan_statement_block' && e.newValue) {
+        try { setStatement(JSON.parse(e.newValue)) } catch {}
+      }
+      if (e.key === 'aripan_hero_block' && e.newValue) {
+        try { setHero(JSON.parse(e.newValue)) } catch {}
+      }
+    }
+    window.addEventListener('storage', onStorage)
+
     const onFocus = () => load()
     window.addEventListener('focus', onFocus)
 
     return () => {
       clearInterval(interval)
       if (bc) bc.close()
+      window.removeEventListener('storage', onStorage)
       window.removeEventListener('focus', onFocus)
     }
   }, [])

@@ -516,14 +516,15 @@ export async function createOrderFromCart(customerId: string, input: {
     let name = entry.name ? String(entry.name) : ''
     let image = entry.image ? String(entry.image) : (Array.isArray(entry.images) ? String(entry.images[0]) : '')
 
-    if (!name || !image || !price) {
-      const { data: prodRow } = await sb.from('products').select('data').or(`id.eq.${productId},slug.eq.${productId}`).maybeSingle()
-      if (prodRow?.data) {
-        const p = prodRow.data as Record<string, unknown>
-        name = name || String(p.name ?? productId)
-        image = image || (Array.isArray(p.images) ? String(p.images[0]) : '') || String(p.image ?? '')
-        price = price || Number(p.price ?? 0)
+    const { data: prodRow } = await sb.from('products').select('data').or(`id.eq.${productId},slug.eq.${productId}`).maybeSingle()
+    if (prodRow?.data) {
+      const p = prodRow.data as Record<string, unknown>
+      if (p.availability === 'sold') {
+        throw new Error(`Artwork "${p.name || name || productId}" has already been sold and cannot be ordered.`)
       }
+      name = name || String(p.name ?? productId)
+      image = image || (Array.isArray(p.images) ? String(p.images[0]) : '') || String(p.image ?? '')
+      price = price || Number(p.price ?? 0)
     }
     if (!name) name = productId
 
