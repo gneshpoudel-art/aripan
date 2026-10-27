@@ -1,6 +1,6 @@
 export const SITE = {
   name: 'ARIPAN',
-  legalName: 'ARIPAN Mithila Studio',
+  legalName: 'aripan Art Studio',
   tagline: 'Mithila painting, held with museum care.',
   description:
     'The digital home of ARIPAN, a Mithila artist presenting original paintings, prints, and textile works from Nepal.',

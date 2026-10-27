@@ -157,7 +157,7 @@ export function Header() {
               </button>
             </div>
             <p className="mobile-nav-caption">
-              ARIPAN · Mithila Art Studio · Nepal
+              aripan Art Studio
             </p>
           </div>
         </div>

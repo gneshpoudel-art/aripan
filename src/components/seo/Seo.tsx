@@ -22,7 +22,7 @@ export function Seo({
 }: SeoProps) {
   const url = absUrl(path)
   const img = image.startsWith('http') ? image : absUrl(image)
-  const fullTitle = title.includes('ARIPAN') ? title : `${title} — ARIPAN`
+  const fullTitle = title.toLowerCase().includes('aripan') ? title : `${title} — ARIPAN`
   const graph = Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : []
 
   return (

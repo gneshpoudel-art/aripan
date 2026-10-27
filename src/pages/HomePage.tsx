@@ -234,7 +234,7 @@ export function HomePage() {
   return (
     <>
       <Seo
-        title="ARIPAN — Mithila Art Studio"
+        title="aripan Art Studio"
         description="Enter the digital home of ARIPAN: original Mithila paintings, archival prints, and a gallery experience designed with museum manners."
         path="/"
         image="/artworks/tree-of-life.png"
